@@ -13,6 +13,7 @@
       height: 100vh;
       overflow: hidden;
       background: #000;
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cline x1='12' y1='2' x2='12' y2='10' stroke='%23998a5a' stroke-width='1.5'/%3E%3Cline x1='12' y1='14' x2='12' y2='22' stroke='%23998a5a' stroke-width='1.5'/%3E%3Cline x1='2' y1='12' x2='10' y2='12' stroke='%23998a5a' stroke-width='1.5'/%3E%3Cline x1='14' y1='12' x2='22' y2='12' stroke='%23998a5a' stroke-width='1.5'/%3E%3C/svg%3E") 12 12, crosshair;
     }
 
     /* ── Scene wrapper ── */
@@ -156,6 +157,13 @@
       border: 2px solid #998a5a;
     }
 
+    /* parallax transitions */
+    .ship          { transition: transform 0.12s ease-out; }
+    .orbit,
+    .orbit-inner   { transition: transform 0.2s ease-out; }
+    .radials       { transition: transform 0.2s ease-out; }
+    .satellite-wrap { transition: transform 0.16s ease-out; }
+
     /* ── Scene 1 UI labels ── */
     .typewriter {
       position: absolute;
@@ -261,7 +269,14 @@
       transition: opacity 0.8s ease;
     }
 
-    .corner-label-right.complete.show { opacity: 1; }
+    .corner-label-right.complete.show {
+      animation: warp-pulse 1.4s step-end infinite;
+    }
+
+    @keyframes warp-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.15; }
+    }
 
     @keyframes typing-top { from { width: 0; } to { width: 16em; } }
 
@@ -270,21 +285,101 @@
     /* ── Scene 2 specific ── */
     .s2-bg { background-image: url('Scene2 Background.jpg'); background-size: 100% 100%; }
 
-    .s2-planet {
+    #s2-ui {
       position: absolute;
-      width: 120vh;
-      height: 120vh;
-      border-radius: 50%;
-      background: #95471f;
-      right: -42vh;
-      top: 50%;
+      left: 62px;
+      top: 44%;
       transform: translateY(-50%);
-      z-index: 10;
+      z-index: 50;
+      pointer-events: none;
     }
+
+    .s2-ui-line {
+      font-family: 'Notable', sans-serif;
+      font-size: 22px;
+      color: #95471f;
+      letter-spacing: 0.18em;
+      white-space: nowrap;
+      min-height: 1.4em;
+      margin-bottom: 14px;
+      opacity: 0;
+      transition: opacity 0.7s ease;
+    }
+
+    #s2-line2-wrap {
+      display: none;
+      white-space: nowrap;
+      pointer-events: auto;
+      position: relative;
+    }
+
+    #s2-input {
+      background: none;
+      border: none;
+      border-bottom: 1.5px solid #95471f;
+      color: #95471f;
+      font-family: 'Notable', sans-serif;
+      font-size: 22px;
+      letter-spacing: 0.18em;
+      outline: none;
+      width: 14em;
+      vertical-align: baseline;
+      caret-color: #95471f;
+    }
+
+    #s2-result {
+      position: absolute;
+      top: calc(100% + 40px);
+      left: 0;
+      font-family: 'Notable', sans-serif;
+      font-size: 16px;
+      letter-spacing: 0.15em;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    #planet-canvas { image-rendering: crisp-edges; }
 
     .s2-ui {
       position: absolute;
       z-index: 100;
+    }
+
+    /* ── Scene nav buttons ── */
+    #scene-nav {
+      position: fixed;
+      top: 60px;
+      left: 80px;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #scene-nav.visible { display: flex; }
+
+    .nav-btn {
+      font-family: 'Notable', sans-serif;
+      font-size: 18px;
+      color: #998a5a;
+      background: none;
+      border: 1.5px solid #998a5a;
+      padding: 4px 8px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: color 0.2s, border-color 0.2s;
+      line-height: 1.3;
+    }
+
+    .nav-btn:hover { color: #fff; border-color: #fff; }
+    .nav-btn:disabled { opacity: 0.2; cursor: default; }
+
+    #nav-label {
+      font-family: 'Notable', sans-serif;
+      font-size: 13px;
+      color: #998a5a;
+      letter-spacing: 0.15em;
     }
 
     /* ── Warp flash overlay ── */
@@ -301,8 +396,14 @@
     #loading-screen {
       position: fixed;
       inset: 0;
-      background: #000;
+      background: none;
       z-index: 2000;
+    }
+
+    #ls-bg {
+      position: absolute;
+      inset: 0;
+      background: #000;
       transition: opacity 1.2s ease;
     }
 
@@ -365,9 +466,10 @@
 
   <!-- Loading / Intro screen -->
   <div id="loading-screen">
+    <div id="ls-bg"></div>
     <div id="story-intro">
       <span class="story-line" data-delay="1000">ONE DAY, DURING MY ROUTINE PATROL, I DETECTED A SIGNAL FROM AN UNUSUAL <span style="color:#95471f">PLANET</span>.</span>
-      <span class="story-line" data-delay="4500">THE <span style="color:#95471f">PLANET</span> RADIATED A STRIKING, EARTHY RED FROM ITS SURFACE.</span>
+      <span class="story-line" data-delay="4500">THE <span id="planet-zoom-src" style="color:#95471f">PLANET</span> RADIATED A STRIKING, EARTHY RED FROM ITS SURFACE.</span>
       <span class="story-line" data-delay="8000">TEMPTED, I MADE THE DECISION TO FLY IN AND EXPLORE.</span>
     </div>
     <div id="click-hint">— CLICK TO CONTINUE —</div>
@@ -377,6 +479,13 @@
   <!-- Warp flash -->
   <div id="warp-flash"></div>
 
+  <!-- Scene navigation -->
+  <div id="scene-nav">
+    <button class="nav-btn" id="nav-prev">←</button>
+    <span id="nav-label">CH.01</span>
+    <button class="nav-btn" id="nav-next">→</button>
+  </div>
+
   <!-- ════ SCENE 1 ════ -->
   <div id="scene-1" class="scene-wrap">
     <div class="noise"></div>
@@ -385,7 +494,7 @@
     <div class="bottom-right-label">
       <span style="display:inline-block;width:18px;height:18px;background:#5c6b3f;vertical-align:middle;margin-right:12px;margin-bottom:6px;"></span>JOURNEY EASTWARD
     </div>
-    <div class="typewriter">2777.03.03 &nbsp; LOCATION: MILKY WAY GALAXY &nbsp; 8088.8388.8888</div>
+    <div class="typewriter">2777.03.03 &nbsp; LOCATION: MILKY WAY GALAXY &nbsp; <span id="coords">8088.8388.8888</span></div>
     <div class="typewriter2">DESTINATION: WESTERN PLANET (CODE: OLD WEST PLANET)</div>
 
     <div style="position:relative;width:100%;height:100%;">
@@ -429,7 +538,15 @@
   <div id="scene-2" class="scene-wrap hidden">
     <div class="noise"></div>
 
-    <div class="s2-planet"></div>
+    <canvas id="planet-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:10;pointer-events:none;"></canvas>
+
+    <div id="s2-ui">
+      <div id="s2-line1" class="s2-ui-line"></div>
+      <div id="s2-line2-wrap">
+        <span id="s2-line2" class="s2-ui-line"></span><input id="s2-input" type="text" autocomplete="off" spellcheck="false" />
+        <div id="s2-result"></div>
+      </div>
+    </div>
 
     <div style="position:relative;width:100%;height:100%;">
       <div class="bg-layer">
@@ -441,8 +558,98 @@
     </div>
   </div>
 
+  <!-- ════ SCENE 3 ════ -->
+  <div id="scene-3" class="scene-wrap hidden" style="background:#ae2c12;">
+    <div class="noise"></div>
+  </div>
+
   <script>
-    /* ── Scene transition ── */
+    /* ── Scene nav ── */
+    const sceneOrder = ['scene-1', 'scene-2', 'scene-3'];
+    let currentSceneIndex = 0;
+    let warpRunning = false;
+
+    function updateNav() {
+      const label = document.getElementById('nav-label');
+      const prev  = document.getElementById('nav-prev');
+      const next  = document.getElementById('nav-next');
+      label.textContent = 'CH.0' + (currentSceneIndex + 1);
+      prev.disabled = currentSceneIndex === 0;
+      next.disabled = currentSceneIndex === sceneOrder.length - 1;
+    }
+
+    function showNav() {
+      document.getElementById('scene-nav').classList.add('visible');
+      updateNav();
+    }
+
+    function fadeToScene(toIndex) {
+      if (toIndex === currentSceneIndex) return;
+      warpRunning = false;
+      const fromId = sceneOrder[currentSceneIndex];
+      const toId   = sceneOrder[toIndex];
+      currentSceneIndex = toIndex;
+      sessionStorage.setItem('currentScene', toId);
+      updateNav();
+
+      const from = document.getElementById(fromId);
+      from.style.transition = 'opacity 0.5s ease';
+      from.style.opacity = '0';
+
+      setTimeout(function() {
+        from.style.transition = 'none';
+        from.classList.add('hidden');
+        const to = document.getElementById(toId);
+        to.style.transition = 'none';
+        to.style.opacity = '0';
+        to.classList.remove('hidden');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          to.style.transition = 'opacity 0.7s ease';
+          to.style.opacity = '1';
+        }));
+      }, 500);
+    }
+
+    document.getElementById('nav-prev').addEventListener('click', () => fadeToScene(currentSceneIndex - 1));
+    document.getElementById('nav-next').addEventListener('click', () => fadeToScene(currentSceneIndex + 1));
+
+    /* ── Scene 1 mouse parallax + coords ── */
+    let lastCoordCell = '';
+
+    function randomCoord() {
+      const s = () => String(Math.floor(Math.random() * 9000) + 1000);
+      return s() + '.' + s() + '.' + s();
+    }
+
+    document.getElementById('scene-1').addEventListener('mousemove', function(e) {
+      const cellX = Math.floor(e.clientX / (window.innerWidth  / 4));
+      const cellY = Math.floor(e.clientY / (window.innerHeight / 3));
+      const cell  = cellX + ',' + cellY;
+      if (cell !== lastCoordCell) {
+        lastCoordCell = cell;
+        const el = document.getElementById('coords');
+        if (el) el.textContent = randomCoord();
+      }
+      const cx = window.innerWidth  / 2;
+      const cy = window.innerHeight / 2;
+      const dx = (e.clientX - cx) / cx;
+      const dy = (e.clientY - cy) / cy;
+
+      document.querySelector('.ship').style.transform =
+        `translate(${dx * 14}px, ${dy * 8}px)`;
+
+      const ox = dx * 6, oy = dy * 4;
+      document.querySelector('.orbit').style.transform =
+        `translate(${ox}px, ${oy}px)`;
+      document.querySelector('.orbit-inner').style.transform =
+        `translate(${ox}px, ${oy}px)`;
+      document.querySelector('.radials').style.transform =
+        `translateY(-50%) translate(${ox}px, ${oy}px)`;
+      document.querySelector('.satellite-wrap').style.transform =
+        `translate(calc(-50% + ${dx * 10}px), calc(-50% + ${dy * 6}px))`;
+    });
+
+    /* ── Scene transition (warp) ── */
     function transitionToScene(toId) {
       sessionStorage.setItem('currentScene', toId);
       const flash = document.getElementById('warp-flash');
@@ -482,6 +689,8 @@
         target.style.transition = 'none';
         target.style.opacity = '1';
         target.classList.remove('hidden');
+        currentSceneIndex = sceneOrder.indexOf(savedScene);
+        showNav();
         return;
       }
       const indicator = document.getElementById('loading-indicator');
@@ -499,19 +708,25 @@
       setTimeout(() => hint.classList.add('visible'), lastDelay + 1400);
 
       loadingScreen.addEventListener('click', function onIntroClick() {
-        loadingScreen.classList.add('fade-out');
-        setTimeout(() => loadingScreen.remove(), 1200);
         loadingScreen.removeEventListener('click', onIntroClick);
 
-        /* Scene 1 UI start */
+        /* fade entire loading screen out */
+        loadingScreen.style.transition    = 'opacity 1.2s ease';
+        loadingScreen.style.opacity       = '0';
+        loadingScreen.style.pointerEvents = 'none';
+
+        /* scene 1 UI starts immediately on click */
+        showNav();
         document.querySelector('.typewriter').classList.add('active');
         document.querySelector('.typewriter2').classList.add('active');
         document.querySelector('.corner-label-right').classList.add('active');
-
         setTimeout(function() {
           document.querySelector('.corner-label').classList.add('label-visible');
           document.querySelector('.bottom-right-label').classList.add('label-visible');
         }, 1200);
+
+        /* remove loading screen element after fade */
+        setTimeout(function() { loadingScreen.remove(); }, 1400);
 
         /* MISSION → PREPARATION COMPLETE */
         setTimeout(function() {
@@ -524,11 +739,10 @@
             el.style.transition = '';
             el.classList.add('complete');
             el.textContent = 'PREPARATION COMPLETE: CLICK TO WARP';
-            requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+            requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('show'); }); });
           }, 700);
         }, 5000);
 
-        /* 等文字变完后，监听跃迁点击:when all of texts show up, click the screen and then changing to the third scene */
         setTimeout(function() {
           document.addEventListener('click', function warpHandler() {
             document.removeEventListener('click', warpHandler);
@@ -544,7 +758,7 @@
             let transitioned = false;
 
             track.style.animation = 'none';
-            track.style.transform = `translateX(${position}px)`;
+            track.style.transform = 'translateX(' + position + 'px)';
 
             function warpFrame(timestamp) {
               if (!lastTime) lastTime = timestamp;
@@ -555,11 +769,12 @@
               speed += (fastSpeed - speed) * 0.018 * delta;
               position -= speed * delta;
               if (position <= -halfWidth) position += halfWidth;
-              track.style.transform = `translateX(${position}px)`;
+              track.style.transform = 'translateX(' + position + 'px)';
 
-              /* 加速 3 秒后跳转场景 :increasing tbackground moving and wrap*/
               if (!transitioned && timestamp - warpStartTime > 3000) {
                 transitioned = true;
+                currentSceneIndex = 1;
+                updateNav();
                 transitionToScene('scene-2');
               }
 
@@ -571,6 +786,392 @@
         }, 5900);
       });
     });
+    /* ── Scene 2 text sequence ── */
+    function startS2Sequence() {
+      const line1      = document.getElementById('s2-line1');
+      const line2      = document.getElementById('s2-line2');
+      const line2Wrap  = document.getElementById('s2-line2-wrap');
+      const input      = document.getElementById('s2-input');
+      const result     = document.getElementById('s2-result');
+
+      function typeText(el, text, speed, cb) {
+        let i = 0;
+        el.textContent = '';
+        el.style.opacity = '1';
+        const id = setInterval(function() {
+          el.textContent += text[i++];
+          if (i >= text.length) { clearInterval(id); if (cb) cb(); }
+        }, speed);
+      }
+
+      /* step 1: type line 1, stays visible */
+      typeText(line1, 'PREPARING TO LAND', 70, function() {
+        /* step 2: pause, then show line 2 + inline input */
+        setTimeout(function() {
+          line2Wrap.style.display = 'block';
+          typeText(line2, 'ENTER PLANET COORDINATES : ', 55, function() {
+            input.focus();
+          });
+        }, 900);
+      });
+
+      input.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter') return;
+        if (input.value.trim() === '8888.8888.8888') {
+          result.style.color   = '#4488cc';
+          result.textContent   = 'COORDINATES CONFIRMED — INITIATING DESCENT';
+          result.style.opacity = '1';
+          setTimeout(function() {
+            const ui = document.getElementById('s2-ui');
+            ui.style.transition = 'opacity 1.2s ease';
+            ui.style.opacity    = '0';
+            if (window.triggerS2Landing) window.triggerS2Landing();
+          }, 1400);
+        } else {
+          result.style.color   = '#cc2222';
+          result.textContent   = 'INVALID COORDINATES — TRY AGAIN';
+          result.style.opacity = '1';
+          input.value          = '';
+        }
+      });
+    }
+
+    /* ── Planet particle sphere ── */
+    (function() {
+      const canvas = document.getElementById('planet-canvas');
+      const ctx    = canvas.getContext('2d');
+      const N      = 4500;
+      const particles = [];
+
+      const golden = (1 + Math.sqrt(5)) / 2;
+      for (let i = 0; i < N; i++) {
+        const theta = Math.acos(1 - 2 * (i + 0.5) / N);
+        const phi   = 2 * Math.PI * i / golden;
+        particles.push({
+          x: Math.sin(theta) * Math.cos(phi),
+          y: Math.sin(theta) * Math.sin(phi),
+          z: Math.cos(theta),
+          rot: 0,
+          alt: Math.random() < 0.18
+        });
+      }
+
+      let mouseX = -9999, mouseY = -9999;
+      document.getElementById('scene-2').addEventListener('mousemove', function(e) {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+
+      let rotY = 0;
+      let rafId = null;
+      let s2Coords = '8888.8888.8888';
+      let s2LastCell = '';
+      let correctInput     = false;
+      let shipLandingStart = null;
+      let camLandingStart  = null;
+      let landingDone      = false;
+      window.triggerS2Landing = function() { correctInput = true; };
+
+      /* ── Ship state ── */
+      let shipStartTime = null;
+      let shipArrived   = false;
+      let shipOx, shipOy, shipRx, shipRy;
+      let planetCx, planetCy;
+      const shipTilt = -0.22;
+      const entryAngle = Math.PI;
+      const stopAngle  = Math.PI;
+
+      function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+      function orbitPt(a) {
+        return {
+          x: shipOx + shipRx * Math.cos(a) * Math.cos(shipTilt) - shipRy * Math.sin(a) * Math.sin(shipTilt),
+          y: shipOy + shipRx * Math.cos(a) * Math.sin(shipTilt) + shipRy * Math.sin(a) * Math.cos(shipTilt)
+        };
+      }
+
+      function drawIsoCube(x, y, s, angle, showLabel) {
+        /* rotated arrow shape */
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.fillStyle = '#998a5a';
+        ctx.beginPath();
+        ctx.moveTo( s * 1.6,  0);
+        ctx.lineTo(-s * 1.1, -s * 1.1);
+        ctx.lineTo(-s * 0.3,  0);
+        ctx.lineTo(-s * 1.1,  s * 1.1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        if (showLabel === false) { return; }
+        /* callout from rotated upper-left corner, label always in screen space */
+        const cos = Math.cos(angle), sin = Math.sin(angle);
+        const ulx = x + (-s * 1.1) * cos - (-s * 1.1) * sin;
+        const uly = y + (-s * 1.1) * sin + (-s * 1.1) * cos;
+        const kx  = ulx - s * 1.2,  ky = uly - s * 1.4;
+        const ex  = kx  - s * 2.5;
+        ctx.save();
+        ctx.strokeStyle = '#998a5a';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(ulx, uly);
+        ctx.lineTo(kx,  ky);
+        ctx.lineTo(ex,  ky);
+        ctx.stroke();
+        ctx.fillStyle = '#998a5a';
+        ctx.font = `${Math.round(s * 0.9)}px 'Notable', sans-serif`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('SHIP', ex - 3, ky);
+        ctx.restore();
+      }
+
+      function drawShip(timestamp) {
+        if (shipStartTime === null) { shipStartTime = timestamp + 400; return; }
+        const elapsed = Math.max(0, timestamp - shipStartTime);
+        const p0dur = 2200, p1dur = 3000;
+        let sx, sy;
+
+        if (elapsed < p0dur) {
+          /* phase 0: fly from bottom-left to orbit entry */
+          const H0 = canvas.offsetHeight;
+          const entry = orbitPt(entryAngle);
+          const t = easeInOut(elapsed / p0dur);
+          sx = -40 + (entry.x + 40) * t;
+          sy = (H0 + 40) + (entry.y - H0 - 40) * t;
+        } else if (elapsed < p0dur + p1dur) {
+          /* phase 1: travel along orbit to stop */
+          const t = easeInOut((elapsed - p0dur) / p1dur);
+          const a = entryAngle + (stopAngle - entryAngle) * t;
+          const pt = orbitPt(a);
+          sx = pt.x; sy = pt.y;
+        } else if (!correctInput) {
+          /* phase 2: hover */
+          const bob = Math.sin((elapsed - p0dur - p1dur) * 0.002) * 3;
+          const pt  = orbitPt(stopAngle);
+          sx = pt.x; sy = pt.y + bob;
+        } else {
+          /* phase 3: travel orbit π → near planet; phase 4: fly into planet */
+          if (!shipLandingStart) shipLandingStart = timestamp;
+          const lt = timestamp - shipLandingStart;
+          const phase3dur = 3500, phase4dur = 2500;
+          if (lt < phase3dur) {
+            const t  = easeInOut(lt / phase3dur);
+            const a  = Math.PI * (1 - 0.92 * t);
+            const pt = orbitPt(a);
+            sx = pt.x; sy = pt.y;
+          } else {
+            const t       = easeInOut(Math.min((lt - phase3dur) / phase4dur, 1));
+            const startPt = orbitPt(Math.PI * 0.08);
+            sx = startPt.x + (planetCx - startPt.x) * t;
+            sy = startPt.y + (planetCy - startPt.y) * t;
+            if (t >= 0.99) return;
+          }
+        }
+
+        if (!shipArrived && elapsed >= p0dur) {
+          shipArrived = true;
+          startS2Sequence();
+        }
+
+        /* scale ship down during phase 4 */
+        const p4t = (correctInput && shipLandingStart && (timestamp - shipLandingStart) > 3500)
+          ? easeInOut(Math.min((timestamp - shipLandingStart - 3500) / 2500, 1)) : 0;
+        const shipSize = Math.max(0.5, 12 * (1 - p4t * 0.95));
+        const glowR    = 28 * (1 - p4t * 0.8);
+
+        /* glow */
+        const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, glowR);
+        glow.addColorStop(0, `rgba(232,224,204,${0.25 * (1 - p4t)})`);
+        glow.addColorStop(1, 'rgba(232,224,204,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(sx, sy, glowR, 0, Math.PI*2); ctx.fill();
+
+        const shipAngle = correctInput
+          ? Math.atan2(planetCy - sy, planetCx - sx)
+          : Math.atan2(mouseY - sy, mouseX - sx);
+        drawIsoCube(sx, sy, shipSize, shipAngle, !correctInput);
+      }
+
+      function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width  = canvas.offsetWidth  * dpr;
+        canvas.height = canvas.offsetHeight * dpr;
+        ctx.scale(dpr, dpr);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      function drawPlanet(timestamp) {
+        const W = canvas.offsetWidth;
+        const H = canvas.offsetHeight;
+        ctx.clearRect(0, 0, W, H);
+
+        const radius = H * 0.6;
+        const cx = W - H * 0.22;
+        const cy = H * 0.5;
+
+        let camZoom = 1;
+        if (correctInput && timestamp) {
+          if (!camLandingStart) camLandingStart = timestamp;
+          const ms = timestamp - camLandingStart;
+          const lt  = Math.min(ms / 8000, 1);
+          const zt  = lt * lt * lt;
+          if (!landingDone) {
+            rotY   += 0.0004 + zt * 0.008;
+            camZoom = 1 + zt * 80;
+            if (lt >= 0.87) {
+              landingDone = true;
+              const s3 = document.getElementById('scene-3');
+              s3.style.transition = 'none';
+              s3.style.opacity = '1';
+              s3.classList.remove('hidden');
+              currentSceneIndex = sceneOrder.indexOf('scene-3');
+              updateNav();
+              sessionStorage.setItem('currentScene', 'scene-3');
+              setTimeout(function() {
+                document.getElementById('scene-2').classList.add('hidden');
+              }, 300);
+            }
+          } else {
+            rotY   += 0.0084;
+            camZoom = 81;
+          }
+        } else if (!correctInput) {
+          rotY += 0.0004;
+        }
+        ctx.save();
+        if (camZoom > 1) {
+          ctx.translate(cx, cy);
+          ctx.scale(camZoom, camZoom);
+          ctx.translate(-cx, -cy);
+        }
+        const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+
+        /* ── orbit back (behind planet) ── */
+        const ox    = cx - H * 0.08;
+        const oy    = cy + H * 0.04;
+        const rx    = W * 0.64;
+        const ry    = H * 0.11;
+        const tilt  = -0.22;
+        shipOx = ox; shipOy = oy; shipRx = rx; shipRy = ry;
+        planetCx = cx; planetCy = cy;
+        ctx.save();
+        ctx.setLineDash([14, 9]);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(153,138,90,0.35)';
+        ctx.beginPath();
+        ctx.ellipse(ox, oy, rx, ry, tilt, Math.PI, 2 * Math.PI);
+        ctx.stroke();
+        ctx.restore();
+
+        /* atmospheric glow */
+        const glow = ctx.createRadialGradient(cx, cy, radius * 0.5, cx, cy, radius * 1.3);
+        glow.addColorStop(0,   'rgba(149,71,31,0.12)');
+        glow.addColorStop(0.6, 'rgba(149,71,31,0.05)');
+        glow.addColorStop(1,   'rgba(149,71,31,0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, W, H);
+
+        /* project particles */
+        const pts = particles.map(p => {
+          const rx =  p.x * cosY + p.z * sinY;
+          const ry =  p.y;
+          const rz = -p.x * sinY + p.z * cosY;
+
+          const light = Math.max(0, -rx * 0.6 + ry * -0.3 + rz * 0.5) * 0.75 + 0.25;
+
+          return { sx: cx + rx * radius, sy: cy + ry * radius, z: rz, light, p };
+        });
+
+        pts.sort((a, b) => a.z - b.z);
+
+        pts.forEach(p => {
+          const depth  = (p.z + 1) / 2;
+          const size   = depth * 22 + 5;
+          const alpha  = 1;
+          const bright = Math.floor(149 + p.light * 40);
+          const dist = Math.hypot(p.sx - mouseX, p.sy - mouseY);
+          if (dist < 70) p.p.rot += 0.06 * (1 - dist / 70);
+          const angle = Math.PI / 2 + p.p.rot;
+          const h      = size * Math.sqrt(3);
+          ctx.beginPath();
+          ctx.moveTo(
+            p.sx + size * Math.cos(angle),
+            p.sy + size * Math.sin(angle)
+          );
+          ctx.lineTo(
+            p.sx + size * Math.cos(angle + 2.094),
+            p.sy + size * Math.sin(angle + 2.094)
+          );
+          ctx.lineTo(
+            p.sx + size * Math.cos(angle + 4.189),
+            p.sy + size * Math.sin(angle + 4.189)
+          );
+          ctx.closePath();
+          ctx.fillStyle = p.p.alt
+            ? `rgba(153,138,90,${alpha})`
+            : `rgba(${bright},${Math.floor(71*p.light)},${Math.floor(31*p.light)},${alpha})`;
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(p.sx, p.sy, size * 0.05, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0,0,0,0.85)';
+          ctx.fill();
+        });
+
+        /* ── orbit front (in front of planet) ── */
+        ctx.save();
+        ctx.setLineDash([14, 9]);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(153,138,90,0.75)';
+        ctx.beginPath();
+        ctx.ellipse(ox, oy, rx, ry, tilt, 0, Math.PI);
+        ctx.stroke();
+        ctx.restore();
+
+        if (timestamp) drawShip(timestamp);
+
+        /* ── coordinate label near left end of orbit ── */
+        const distToPlanet = Math.hypot(mouseX - cx, mouseY - cy);
+        const onPlanet = mouseX > -999 && distToPlanet < radius;
+        if (!onPlanet && mouseX > -999) {
+          const cellX = Math.floor(mouseX / (W / 4));
+          const cellY = Math.floor(mouseY / (H / 3));
+          const cell  = cellX + ',' + cellY;
+          if (cell !== s2LastCell) {
+            s2LastCell = cell;
+            const r = () => String(Math.floor(Math.random() * 9000) + 1000);
+            s2Coords = r() + '.' + r() + '.' + r();
+          }
+        }
+        const lpt = orbitPt(Math.PI);
+        ctx.save();
+        ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        ctx.font = "13px 'Notable', sans-serif";
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('⊕  ' + (onPlanet ? '8888.8888.8888' : s2Coords), lpt.x + 14, lpt.y + 20);
+        ctx.restore();
+
+        ctx.restore();
+        rafId = requestAnimationFrame(drawPlanet);
+      }
+
+      /* only animate when scene 2 is visible */
+      const observer = new MutationObserver(() => {
+        const hidden = document.getElementById('scene-2').classList.contains('hidden');
+        if (hidden) { cancelAnimationFrame(rafId); rafId = null; }
+        else if (!rafId) requestAnimationFrame(drawPlanet);
+      });
+      observer.observe(document.getElementById('scene-2'), { attributes: true, attributeFilter: ['class'] });
+
+      /* start if already visible (e.g. sessionStorage jump) */
+      if (!document.getElementById('scene-2').classList.contains('hidden')) requestAnimationFrame(drawPlanet);
+    })();
   </script>
 </body>
 </html>
