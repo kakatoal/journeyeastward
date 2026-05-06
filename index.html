@@ -1202,15 +1202,25 @@
       const WHITES  = ['#ddddd0','#e8e8dc','#d4d4c4','#e0ddd4','#f0ede6'];
       const REDS    = ['#ae2c12','#c4331a','#991f0b','#b83015','#a02810'];
 
+      function h2(a, b) {
+        /* XOR-based mix — avoids the linear-periodicity issue of additive hashes */
+        return Math.abs((a ^ (a << 13)) ^ (b * 1664525 + 1013904223) ^ (a * b * 22695477)) % 100;
+      }
+
       function tileColor(ix, iz) {
-        /* group 5×3 tiles per patch, color tied to tile identity → never changes */
+        /* white villages: scattered, biased toward middle rows (iz 4–9) */
+        const inMiddle = iz >= 4 && iz <= 9;
+        const wn = h2(ix, iz);
+        if (inMiddle && wn < 12) return WHITES[(ix * 3 + iz * 7) % WHITES.length];
+        if (!inMiddle && wn < 2) return WHITES[(ix * 3 + iz * 7) % WHITES.length];
+
+        /* large stable patches for blue / red / green */
         const gx = Math.floor(ix / 5);
         const gz = Math.floor(iz / 3);
-        const n  = Math.abs(gx * 7 + gz * 13 + gx * gz * 3) % 23;
-        if (n < 2)  return BLUES [(gx * 3  + gz * 11) % BLUES.length];
-        if (n < 3)  return WHITES[(gx * 5  + gz *  9) % WHITES.length];
-        if (n < 5)  return REDS  [(gx * 11 + gz *  5) % REDS.length];
-        return             GREENS[(gx * 7  + gz *  3) % GREENS.length];
+        const pn = h2(gx + 500, gz + 500);
+        if (pn < 14) return BLUES [(gx * 3  + gz * 11) % BLUES.length];
+        if (pn < 27) return REDS  [(gx * 11 + gz *  5) % REDS.length];
+        return              GREENS[(gx * 7  + gz *  3) % GREENS.length];
       }
 
       function render(ts) {
