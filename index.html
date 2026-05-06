@@ -561,6 +561,7 @@
   <!-- ════ SCENE 3 ════ -->
   <div id="scene-3" class="scene-wrap hidden" style="background:#ae2c12;">
     <div class="noise"></div>
+    <canvas id="s3-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none;"></canvas>
   </div>
 
   <script>
@@ -1171,6 +1172,113 @@
 
       /* start if already visible (e.g. sessionStorage jump) */
       if (!document.getElementById('scene-2').classList.contains('hidden')) requestAnimationFrame(drawPlanet);
+    })();
+
+    /* ── Scene 3 : animated diagonal triangle band ── */
+    (function() {
+      const canvas = document.getElementById('s3-canvas');
+      const ctx    = canvas.getContext('2d');
+
+      let W = 0, H = 0, diag = 0, h = 0, s = 0;
+      let scrollOffset = 0;
+      let lastTs = null;
+      let animId = null;
+      const SPEED = 30; /* px/sec along the diagonal */
+
+      function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        W = canvas.offsetWidth;
+        H = canvas.offsetHeight;
+        canvas.width  = W * dpr;
+        canvas.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        diag = Math.ceil(Math.sqrt(W * W + H * H));
+        h    = H / 16;
+        s    = h * 2 / Math.sqrt(3);
+      }
+
+      const GREENS  = ['#3f4d2a','#4a5a32','#536240','#455438','#3a4826','#5c6b3f','#47562f'];
+      const BLUES   = ['#1e5f8c','#2d6fa3','#3a7fb5','#1a5280','#245e8a'];
+      const WHITES  = ['#ddddd0','#e8e8dc','#d4d4c4','#e0ddd4','#f0ede6'];
+      const REDS    = ['#ae2c12','#c4331a','#991f0b','#b83015','#a02810'];
+
+      function tileColor(ix, iz) {
+        /* group 5×3 tiles per patch, color tied to tile identity → never changes */
+        const gx = Math.floor(ix / 5);
+        const gz = Math.floor(iz / 3);
+        const n  = Math.abs(gx * 7 + gz * 13 + gx * gz * 3) % 23;
+        if (n < 2)  return BLUES [(gx * 3  + gz * 11) % BLUES.length];
+        if (n < 3)  return WHITES[(gx * 5  + gz *  9) % WHITES.length];
+        if (n < 5)  return REDS  [(gx * 11 + gz *  5) % REDS.length];
+        return             GREENS[(gx * 7  + gz *  3) % GREENS.length];
+      }
+
+      function render(ts) {
+        if (lastTs !== null) {
+          const dt = Math.min((ts - lastTs) / 1000, 0.1);
+          scrollOffset = (scrollOffset + SPEED * dt) % s;
+        }
+        lastTs = ts;
+
+        const rows    = 14;
+        const bandH   = rows * h;
+        const yStart  = -bandH / 2;
+        const xStart  = -diag * 2;
+        const numCols = Math.ceil(4 * diag / s) + 2;
+
+        ctx.clearRect(0, 0, W, H);
+        ctx.save();
+        ctx.translate(W / 2, H / 2);
+        ctx.rotate(-Math.PI / 4);
+
+        for (let iz = 0; iz < rows; iz++) {
+          const yTop = yStart + iz * h;
+          const yBot = yTop + h;
+          const xOff = (iz % 2 === 0) ? scrollOffset : scrollOffset + s / 2;
+
+          for (let ix = 0; ix < numCols; ix++) {
+            const x0 = xStart + ix * s + xOff;
+            ctx.beginPath();
+            ctx.moveTo(x0,       yTop);
+            ctx.lineTo(x0 + s,   yTop);
+            ctx.lineTo(x0 + s/2, yBot);
+            ctx.closePath();
+            ctx.fillStyle = tileColor(ix, iz);
+            ctx.fill();
+          }
+        }
+
+        ctx.restore();
+        animId = requestAnimationFrame(render);
+      }
+
+      function start() {
+        if (animId) return;
+        resize();
+        lastTs = null;
+        canvas.style.transition = 'none';
+        canvas.style.opacity    = '0';
+        setTimeout(function() {
+          canvas.style.transition = 'opacity 2s ease';
+          canvas.style.opacity    = '1';
+        }, 50);
+        animId = requestAnimationFrame(render);
+      }
+
+      function stop() {
+        if (animId) { cancelAnimationFrame(animId); animId = null; }
+        canvas.style.transition = 'none';
+        canvas.style.opacity    = '0';
+      }
+
+      window.addEventListener('resize', resize);
+      const s3 = document.getElementById('scene-3');
+      new MutationObserver(function() {
+        if (!s3.classList.contains('hidden')) start(); else stop();
+      }).observe(s3, { attributes: true, attributeFilter: ['class'] });
+
+      if (!s3.classList.contains('hidden')) start();
+      window.s3Redraw = start;
     })();
   </script>
 </body>
