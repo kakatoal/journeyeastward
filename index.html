@@ -460,6 +460,53 @@
     @keyframes blink-dots { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
 
     #loading-dots { animation: blink-dots 1s step-end infinite; }
+
+    /* ── Scene 3 village popup ── */
+    #village-popup {
+      position: absolute;
+      top: 550px;
+      left: 150px;
+      z-index: 30;
+      font-family: 'Notable', sans-serif;
+      font-size: 2.8rem;
+      letter-spacing: 0.2em;
+      color: rgba(255, 255, 255, 0.9);
+      opacity: 0;
+      transform: rotate(-45deg) translateY(-8px);
+      transform-origin: left top;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+    }
+    #village-popup.visible {
+      opacity: 1;
+      transform: rotate(-45deg) translateY(0);
+    }
+
+    /* ── Scene 3 text ── */
+    #s3-text {
+      position: absolute;
+      bottom: 75%;
+      right: 1%;
+      z-index: 20;
+      transform: rotate(-45deg);
+      transform-origin: right bottom;
+      pointer-events: none;
+    }
+    .s3-line {
+      font-family: 'Notable', sans-serif;
+      font-size: clamp(1.4rem, 2.8vw, 2.6rem);
+      color: rgba(0, 0, 0, 0.85);
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+      line-height: 0.95;
+      opacity: 0;
+      transform: translateX(16px);
+      transition: opacity 1s ease, transform 1s ease;
+    }
+    .s3-line.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
   </style>
 </head>
 <body>
@@ -559,9 +606,15 @@
   </div>
 
   <!-- ════ SCENE 3 ════ -->
-  <div id="scene-3" class="scene-wrap hidden" style="background:#ae2c12;">
+  <div id="scene-3" class="scene-wrap hidden" style="background:#ae2c12;overflow:hidden;">
     <div class="noise"></div>
-    <canvas id="s3-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none;"></canvas>
+    <canvas id="s3-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:5;"></canvas>
+    <div id="village-popup">VILLAGE</div>
+    <div id="s3-text">
+      <div class="s3-line">FROM HIGH ABOVE —</div>
+      <div class="s3-line">LAKES. FORESTS. VILLAGES.</div>
+      <div class="s3-line">JUST LIKE EARTH.</div>
+    </div>
   </div>
 
   <script>
@@ -1183,7 +1236,11 @@
       let scrollOffset = 0;
       let lastTs = null;
       let animId = null;
-      const SPEED = 30; /* px/sec along the diagonal */
+      const SPEED = 60;
+      const SCROLL_CONSTANT = 1.5; /* seconds at full speed */
+      const SCROLL_DECEL    = 2.0; /* seconds to decelerate to 0 */
+      let scrollActive  = true;
+      let scrollElapsed = 0;
 
       function resize() {
         const dpr = window.devicePixelRatio || 1;
@@ -1223,10 +1280,93 @@
         return              GREENS[(gx * 7  + gz *  3) % GREENS.length];
       }
 
+      function lp(a, b, t) { return a + (b - a) * t; }
+
+      function getColorFamily(color) {
+        if (WHITES.indexOf(color)  !== -1) return 'white';
+        if (BLUES.indexOf(color)   !== -1) return 'blue';
+        if (GREENS.indexOf(color)  !== -1) return 'green';
+        if (REDS.indexOf(color)    !== -1) return 'red';
+        return null;
+      }
+
+      let hoveredColorFamily = null;
+      const hoverProgress = { white: 0, blue: 0, green: 0, red: 0 };
+      const regionPopup      = document.getElementById('village-popup');
+      const popupLabels  = { white: 'VILLAGE', blue: 'LAKE', green: 'FOREST', red: 'MOUNTAIN' };
+      const popupColors  = { white: '#e8e8dc', blue: '#5aaee0', green: '#8ab84a', red: '#ff6b3d' };
+
+      function getColorFamilyUnderMouse(mx, my) {
+        if (!W || !h || !s) return null;
+        const dx = mx - W / 2, dy = my - H / 2;
+        const rdx = (dx - dy) / Math.SQRT2;
+        const rdy = (dx + dy) / Math.SQRT2;
+        const rows   = 14;
+        const yStart = -(rows * h) / 2;
+        const xStart = -diag * 2;
+
+        const izBase = Math.floor((rdy - yStart) / h);
+        for (let diz = -1; diz <= 1; diz++) {
+          const iz = izBase + diz;
+          if (iz < 0 || iz >= rows) continue;
+          const yTop = yStart + iz * h;
+          const yBot = yTop + h;
+          if (rdy < yTop || rdy > yBot) continue;
+          const xOff   = (iz % 2 === 0) ? scrollOffset : scrollOffset + s / 2;
+          const ixBase = Math.floor((rdx - xStart - xOff) / s);
+          for (let dix = -1; dix <= 1; dix++) {
+            const ix = ixBase + dix;
+            const x0 = xStart + ix * s + xOff;
+            const t      = (rdy - yTop) / h;
+            const leftX  = x0 + (s / 2) * t;
+            const rightX = x0 + s - (s / 2) * t;
+            if (rdx >= leftX - 1 && rdx <= rightX + 1) {
+              const fam = getColorFamily(tileColor(ix, iz));
+              if (fam) return fam;
+            }
+          }
+        }
+        return null;
+      }
+
+      canvas.addEventListener('mousemove', function(e) {
+        const r = canvas.getBoundingClientRect();
+        hoveredColorFamily = getColorFamilyUnderMouse(e.clientX - r.left, e.clientY - r.top);
+        if (hoveredColorFamily) {
+          regionPopup.textContent  = popupLabels[hoveredColorFamily];
+          regionPopup.style.color  = popupColors[hoveredColorFamily];
+          regionPopup.classList.add('visible');
+        } else {
+          regionPopup.classList.remove('visible');
+        }
+      });
+      canvas.addEventListener('mouseleave', function() {
+        hoveredColorFamily = null;
+        regionPopup.classList.remove('visible');
+      });
+
       function render(ts) {
         if (lastTs !== null) {
           const dt = Math.min((ts - lastTs) / 1000, 0.1);
-          scrollOffset = (scrollOffset + SPEED * dt) % s;
+          /* scroll briefly on entry then stop */
+          if (scrollActive) {
+            scrollElapsed += dt;
+            let vel;
+            if (scrollElapsed <= SCROLL_CONSTANT) {
+              vel = SPEED;
+            } else {
+              const t = Math.min((scrollElapsed - SCROLL_CONSTANT) / SCROLL_DECEL, 1);
+              vel = SPEED * (1 - t);
+              if (t >= 1) scrollActive = false;
+            }
+            scrollOffset = (scrollOffset + vel * dt) % s;
+          }
+          /* hover morph — each family animates independently */
+          const step = Math.min(dt * 8, 1);
+          for (const fam in hoverProgress) {
+            const t = fam === hoveredColorFamily ? 1 : 0;
+            hoverProgress[fam] += (t - hoverProgress[fam]) * step;
+          }
         }
         lastTs = ts;
 
@@ -1247,14 +1387,38 @@
           const xOff = (iz % 2 === 0) ? scrollOffset : scrollOffset + s / 2;
 
           for (let ix = 0; ix < numCols; ix++) {
-            const x0 = xStart + ix * s + xOff;
-            ctx.beginPath();
-            ctx.moveTo(x0,       yTop);
-            ctx.lineTo(x0 + s,   yTop);
-            ctx.lineTo(x0 + s/2, yBot);
-            ctx.closePath();
-            ctx.fillStyle = tileColor(ix, iz);
-            ctx.fill();
+            const x0    = xStart + ix * s + xOff;
+            const color = tileColor(ix, iz);
+            const fam   = getColorFamily(color);
+            const p     = fam ? hoverProgress[fam] : 0;
+
+            if (p > 0.01) {
+              const cx = x0 + s / 2, cy = yTop + h / 2;
+              const sq = Math.max(s, h) * (1 + p * 0.35) / 2;
+              const pts = [
+                [lp(-s/2, -sq, p), lp(-h/2, -sq, p)],
+                [lp( s/2,  sq, p), lp(-h/2, -sq, p)],
+                [lp(   0,  sq, p), lp( h/2,  sq, p)],
+                [lp(   0, -sq, p), lp( h/2,  sq, p)],
+              ];
+              ctx.save();
+              ctx.translate(cx, cy);
+              ctx.beginPath();
+              ctx.moveTo(pts[0][0], pts[0][1]);
+              for (let i = 1; i < 4; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+              ctx.closePath();
+              ctx.fillStyle = color;
+              ctx.fill();
+              ctx.restore();
+            } else {
+              ctx.beginPath();
+              ctx.moveTo(x0,       yTop);
+              ctx.lineTo(x0 + s,   yTop);
+              ctx.lineTo(x0 + s/2, yBot);
+              ctx.closePath();
+              ctx.fillStyle = color;
+              ctx.fill();
+            }
           }
         }
 
@@ -1262,10 +1426,30 @@
         animId = requestAnimationFrame(render);
       }
 
+      const textLines = document.querySelectorAll('#s3-text .s3-line');
+      const lineDelays = [1200, 3200, 5600];
+      let textTimers = [];
+
+      function startText() {
+        textLines.forEach(function(l) { l.classList.remove('visible'); });
+        textTimers.forEach(clearTimeout);
+        textTimers = lineDelays.map(function(d, i) {
+          return setTimeout(function() { textLines[i].classList.add('visible'); }, d);
+        });
+      }
+
+      function stopText() {
+        textTimers.forEach(clearTimeout);
+        textLines.forEach(function(l) { l.classList.remove('visible'); });
+      }
+
       function start() {
         if (animId) return;
         resize();
         lastTs = null;
+        scrollOffset  = 0;
+        scrollActive  = true;
+        scrollElapsed = 0;
         canvas.style.transition = 'none';
         canvas.style.opacity    = '0';
         setTimeout(function() {
@@ -1273,12 +1457,14 @@
           canvas.style.opacity    = '1';
         }, 50);
         animId = requestAnimationFrame(render);
+        startText();
       }
 
       function stop() {
         if (animId) { cancelAnimationFrame(animId); animId = null; }
         canvas.style.transition = 'none';
         canvas.style.opacity    = '0';
+        stopText();
       }
 
       window.addEventListener('resize', resize);
