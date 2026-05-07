@@ -494,6 +494,39 @@
     #loading-dots { animation: blink-dots 1s step-end infinite; }
 
     /* ── Scene 3 village popup ── */
+    #s4-text {
+      position: absolute;
+      bottom: 90px;
+      left: 80px;
+      z-index: 20;
+      pointer-events: none;
+    }
+    .s4-line {
+      font-family: 'Notable', sans-serif;
+      font-size: clamp(1rem, 1.8vw, 1.6rem);
+      color: #ae2c12;
+      letter-spacing: 0.12em;
+      white-space: nowrap;
+      line-height: 1.3;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+    .s4-line.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #s3-village-hint {
+      opacity: 0 !important;
+      transform: translateX(16px) !important;
+      transition: opacity 0.5s ease, transform 0.5s ease !important;
+    }
+    #s3-village-hint.village-hover {
+      opacity: 1 !important;
+      transform: translateX(0) !important;
+    }
+
     #village-popup {
       position: absolute;
       top: 550px;
@@ -649,12 +682,24 @@
       <div class="s3-line">FROM HIGH ABOVE —</div>
       <div class="s3-line">LAKES. FORESTS. VILLAGES.</div>
       <div class="s3-line">JUST LIKE EARTH.</div>
+      <div class="s3-line" id="s3-village-hint">I SHOULD VISIT THE VILLAGE.</div>
+    </div>
+  </div>
+
+  <!-- ════ SCENE 4 ════ -->
+  <div id="scene-4" class="scene-wrap hidden" style="background:#fff;">
+    <iframe id="s4-frame" src="" style="position:absolute;inset:0;width:100%;height:100%;border:none;"></iframe>
+    <div id="s4-text">
+      <div class="s4-line">THIS IS THE VILLAGE.</div>
+      <div class="s4-line">WHY DOES IT FEEL FAMILIAR?</div>
+      <div class="s4-line">I ONLY KNOW ITS FACE —</div>
+      <div class="s4-line">ANY OTHER ANGLE, IT FADES.</div>
     </div>
   </div>
 
   <script>
     /* ── Scene nav ── */
-    const sceneOrder = ['scene-1', 'scene-2', 'scene-3'];
+    const sceneOrder = ['scene-1', 'scene-2', 'scene-3', 'scene-4'];
     let currentSceneIndex = 0;
     let warpRunning = false;
 
@@ -675,20 +720,57 @@
     function fadeToScene(toIndex) {
       if (toIndex === currentSceneIndex) return;
       warpRunning = false;
+
+      if (sceneOrder[toIndex] === 'scene-4') {
+        const frame = document.getElementById('s4-frame');
+        const alreadyLoaded = !!frame.getAttribute('src');
+        if (!alreadyLoaded) frame.src = 'particle%20village.html';
+        const preDelay = alreadyLoaded ? 0 : 700;
+        setTimeout(function() { _doFade(toIndex); }, preDelay);
+        return;
+      }
+      _doFade(toIndex);
+    }
+
+    function _doFade(toIndex) {
       const fromId = sceneOrder[currentSceneIndex];
       const toId   = sceneOrder[toIndex];
       currentSceneIndex = toIndex;
       sessionStorage.setItem('currentScene', toId);
       updateNav();
 
+      document.body.style.background = (toId === 'scene-4') ? '#fff' : '#000';
+
+      const frame = document.getElementById('s4-frame');
+      if (fromId === 'scene-4') frame.contentWindow && frame.contentWindow.postMessage({ type: 'pause' }, '*');
+      if (toId   === 'scene-4') frame.contentWindow && frame.contentWindow.postMessage({ type: 'resume' }, '*');
+
       const from = document.getElementById(fromId);
+      const to   = document.getElementById(toId);
+
+      if (fromId === 'scene-3' && toId === 'scene-4') {
+        const flash = document.getElementById('warp-flash');
+        flash.style.transition = 'none';
+        flash.style.opacity = '1';
+        from.style.transition = 'none';
+        from.style.opacity = '0';
+        from.classList.add('hidden');
+        to.style.transition = 'none';
+        to.style.opacity = '1';
+        to.classList.remove('hidden');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          flash.style.transition = 'opacity 0.6s ease';
+          flash.style.opacity = '0';
+        }));
+        return;
+      }
+
       from.style.transition = 'opacity 0.5s ease';
       from.style.opacity = '0';
 
       setTimeout(function() {
         from.style.transition = 'none';
         from.classList.add('hidden');
-        const to = document.getElementById(toId);
         to.style.transition = 'none';
         to.style.opacity = '0';
         to.classList.remove('hidden');
@@ -741,6 +823,8 @@
     /* ── Scene transition (warp) ── */
     function transitionToScene(toId) {
       sessionStorage.setItem('currentScene', toId);
+      currentSceneIndex = sceneOrder.indexOf(toId);
+      showNav();
       const flash = document.getElementById('warp-flash');
 
       flash.style.transition = 'opacity 0.3s linear';
@@ -779,6 +863,10 @@
         target.style.opacity = '1';
         target.classList.remove('hidden');
         currentSceneIndex = sceneOrder.indexOf(savedScene);
+        document.body.style.background = (savedScene === 'scene-4') ? '#fff' : '#000';
+        if (savedScene === 'scene-4') {
+          document.getElementById('s4-frame').src = 'particle%20village.html';
+        }
         showNav();
         return;
       }
@@ -845,6 +933,7 @@
             let lastTime = null;
             let warpStartTime = null;
             let transitioned = false;
+            let warpRafId = null;
 
             track.style.animation = 'none';
             track.style.transform = 'translateX(' + position + 'px)';
@@ -864,13 +953,19 @@
                 transitioned = true;
                 currentSceneIndex = 1;
                 updateNav();
-                transitionToScene('scene-2');
+                const shipContainer = document.querySelector('.ship-container');
+                shipContainer.style.transition = 'transform 1.1s cubic-bezier(0.4,0,1,1)';
+                shipContainer.style.transform  = 'translateY(-50%) translateX(160vw)';
+                setTimeout(function() {
+                  cancelAnimationFrame(warpRafId);
+                  transitionToScene('scene-2');
+                }, 900);
               }
 
-              requestAnimationFrame(warpFrame);
+              warpRafId = requestAnimationFrame(warpFrame);
             }
 
-            requestAnimationFrame(warpFrame);
+            warpRafId = requestAnimationFrame(warpFrame);
           });
         }, 5900);
       });
@@ -1327,6 +1422,10 @@
 
       let hoveredColorFamily = null;
       const hoverProgress = { white: 0, blue: 0, green: 0, red: 0 };
+      let clickFamily    = null;
+      let clickProgress  = 0;
+      let clickFired     = false;
+      const clickBg = { white:'#e8e8dc', blue:'#1e5f8c', green:'#3f4d2a', red:'#ae2c12' };
       const regionPopup      = document.getElementById('village-popup');
       const popupLabels  = { white: 'VILLAGE', blue: 'LAKE', green: 'FOREST', red: 'MOUNTAIN' };
       const popupColors  = { white: '#e8e8dc', blue: '#5aaee0', green: '#8ab84a', red: '#ff6b3d' };
@@ -1364,7 +1463,10 @@
         return null;
       }
 
+      const villageHint = document.getElementById('s3-village-hint');
+
       canvas.addEventListener('mousemove', function(e) {
+        if (!textReady) return;
         const r = canvas.getBoundingClientRect();
         hoveredColorFamily = getColorFamilyUnderMouse(e.clientX - r.left, e.clientY - r.top);
         if (hoveredColorFamily) {
@@ -1374,10 +1476,28 @@
         } else {
           regionPopup.classList.remove('visible');
         }
+        if (hoveredColorFamily === 'white') {
+          villageHint.classList.add('village-hover');
+        } else {
+          villageHint.classList.remove('village-hover');
+        }
       });
       canvas.addEventListener('mouseleave', function() {
         hoveredColorFamily = null;
         regionPopup.classList.remove('visible');
+        villageHint.classList.remove('village-hover');
+      });
+      canvas.addEventListener('click', function() {
+        if (!textReady || hoveredColorFamily !== 'white' || clickFamily) return;
+        clickFamily   = hoveredColorFamily;
+        clickProgress = 0;
+        clickFired    = false;
+        textLines.forEach(function(l) {
+          l.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+          l.classList.remove('visible');
+        });
+        regionPopup.classList.remove('visible');
+        villageHint.classList.remove('village-hover');
       });
 
       function render(ts) {
@@ -1401,6 +1521,18 @@
           for (const fam in hoverProgress) {
             const t = fam === hoveredColorFamily ? 1 : 0;
             hoverProgress[fam] += (t - hoverProgress[fam]) * step;
+          }
+          /* click-zoom */
+          if (clickFamily) {
+            clickProgress = Math.min(clickProgress + dt * 1.8, 1);
+            if (clickProgress >= 0.82 && !clickFired) {
+              clickFired = true;
+              const frame = document.getElementById('s4-frame');
+              if (!frame.getAttribute('src')) {
+                frame.src = 'particle%20village.html';
+              }
+              fadeToScene(3);
+            }
           }
         }
         lastTs = ts;
@@ -1427,20 +1559,29 @@
             const fam   = getColorFamily(color);
             const p     = fam ? hoverProgress[fam] : 0;
 
-            if (p > 0.01) {
+            const isZoom  = clickFamily !== null && clickFamily === fam;
+            const ct      = clickProgress * clickProgress * clickProgress;
+            const zScale  = isZoom ? (1 + ct * 60) : 1;
+            const drawP   = isZoom ? 1 : p;
+
+            if (drawP > 0.01 || zScale > 1.001) {
               const cx = x0 + s / 2, cy = yTop + h / 2;
-              const sq = Math.max(s, h) * (1 + p * 0.35) / 2;
-              const pts = [
-                [lp(-s/2, -sq, p), lp(-h/2, -sq, p)],
-                [lp( s/2,  sq, p), lp(-h/2, -sq, p)],
-                [lp(   0,  sq, p), lp( h/2,  sq, p)],
-                [lp(   0, -sq, p), lp( h/2,  sq, p)],
-              ];
+              const sq = Math.max(s, h) * (1 + drawP * 0.35) / 2 * zScale;
               ctx.save();
               ctx.translate(cx, cy);
               ctx.beginPath();
-              ctx.moveTo(pts[0][0], pts[0][1]);
-              for (let i = 1; i < 4; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+              if (zScale > 1.001) {
+                ctx.rect(-sq, -sq, sq * 2, sq * 2);
+              } else {
+                const pts = [
+                  [lp(-s/2, -sq, drawP), lp(-h/2, -sq, drawP)],
+                  [lp( s/2,  sq, drawP), lp(-h/2, -sq, drawP)],
+                  [lp(   0,  sq, drawP), lp( h/2,  sq, drawP)],
+                  [lp(   0, -sq, drawP), lp( h/2,  sq, drawP)],
+                ];
+                ctx.moveTo(pts[0][0], pts[0][1]);
+                for (let i = 1; i < 4; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+              }
               ctx.closePath();
               ctx.fillStyle = color;
               ctx.fill();
@@ -1464,18 +1605,26 @@
       const textLines = document.querySelectorAll('#s3-text .s3-line');
       const lineDelays = [1200, 3200, 5600];
       let textTimers = [];
+      let textReady  = false;
 
       function startText() {
-        textLines.forEach(function(l) { l.classList.remove('visible'); });
+        textReady = false;
+        textLines.forEach(function(l) { l.style.transition = ''; l.classList.remove('visible'); });
         textTimers.forEach(clearTimeout);
         textTimers = lineDelays.map(function(d, i) {
-          return setTimeout(function() { textLines[i].classList.add('visible'); }, d);
+          return setTimeout(function() {
+            textLines[i].classList.add('visible');
+            if (i === lineDelays.length - 1) {
+              setTimeout(function() { textReady = true; }, 1000);
+            }
+          }, d);
         });
       }
 
       function stopText() {
         textTimers.forEach(clearTimeout);
         textLines.forEach(function(l) { l.classList.remove('visible'); });
+        textReady = false;
       }
 
       function start() {
@@ -1485,6 +1634,9 @@
         scrollOffset  = 0;
         scrollActive  = true;
         scrollElapsed = 0;
+        clickFamily   = null;
+        clickProgress = 0;
+        clickFired    = false;
         canvas.style.transition = 'none';
         canvas.style.opacity    = '0';
         setTimeout(function() {
@@ -1512,6 +1664,30 @@
       window.s3Redraw = start;
     })();
 
+    /* ── Scene 4 text ── */
+    (function() {
+      const s4 = document.getElementById('scene-4');
+      const lines = Array.from(s4.querySelectorAll('.s4-line'));
+      const delays = [800, 1800, 2900, 4100];
+      let timers = [];
+
+      function startS4Text() {
+        timers.forEach(clearTimeout);
+        lines.forEach(l => { l.style.transition = 'none'; l.classList.remove('visible'); });
+        timers = delays.map((d, i) => setTimeout(() => lines[i].classList.add('visible'), d));
+      }
+      function stopS4Text() {
+        timers.forEach(clearTimeout);
+        lines.forEach(l => l.classList.remove('visible'));
+      }
+
+      new MutationObserver(function() {
+        if (!s4.classList.contains('hidden')) startS4Text(); else stopS4Text();
+      }).observe(s4, { attributes: true, attributeFilter: ['class'] });
+
+      if (!s4.classList.contains('hidden')) startS4Text();
+    })();
+
     /* ── Full-screen crosshair cursor ── */
     (function() {
       const ch  = document.getElementById('cursor-h');
@@ -1528,6 +1704,19 @@
         cv.style.left  = '-9999px';
         dot.style.top  = '-9999px';
         dot.style.left = '-9999px';
+      });
+      window.addEventListener('message', function(e) {
+        if (e.data.type === 'mousemove') {
+          ch.style.top   = e.data.y + 'px';
+          cv.style.left  = e.data.x + 'px';
+          dot.style.top  = e.data.y + 'px';
+          dot.style.left = e.data.x + 'px';
+        } else if (e.data.type === 'mouseleave') {
+          ch.style.top   = '-9999px';
+          cv.style.left  = '-9999px';
+          dot.style.top  = '-9999px';
+          dot.style.left = '-9999px';
+        }
       });
     })();
   </script>
