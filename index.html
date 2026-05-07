@@ -13,7 +13,7 @@
       height: 100vh;
       overflow: hidden;
       background: #000;
-      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cline x1='12' y1='2' x2='12' y2='10' stroke='%23998a5a' stroke-width='1.5'/%3E%3Cline x1='12' y1='14' x2='12' y2='22' stroke='%23998a5a' stroke-width='1.5'/%3E%3Cline x1='2' y1='12' x2='10' y2='12' stroke='%23998a5a' stroke-width='1.5'/%3E%3Cline x1='14' y1='12' x2='22' y2='12' stroke='%23998a5a' stroke-width='1.5'/%3E%3C/svg%3E") 12 12, crosshair;
+      cursor: none;
     }
 
     /* ── Scene wrapper ── */
@@ -28,6 +28,38 @@
     .scene-wrap.hidden {
       opacity: 0;
       pointer-events: none;
+    }
+
+    /* ── Full-screen crosshair cursor ── */
+    #cursor-h, #cursor-v {
+      position: fixed;
+      pointer-events: none;
+      z-index: 99999;
+      transform: translate(-50%, -50%);
+    }
+    #cursor-dot {
+      position: fixed;
+      pointer-events: none;
+      z-index: 100000;
+      width: 16px;
+      height: 16px;
+      background: #a9663e;
+      clip-path: path('M 8 0 Q 11 5 16 8 Q 11 11 8 16 Q 5 11 0 8 Q 5 5 8 0 Z');
+      transform: translate(-50%, -50%);
+      top: -9999px;
+      left: -9999px;
+    }
+    #cursor-h {
+      width: 100vw; height: 1px;
+      top: -9999px; left: 50%;
+      background: repeating-linear-gradient(to right,
+        #a9663e 0px, #a9663e 6px, transparent 6px, transparent 12px);
+    }
+    #cursor-v {
+      width: 1px; height: 100vh;
+      left: -9999px; top: 50%;
+      background: repeating-linear-gradient(to bottom,
+        #a9663e 0px, #a9663e 6px, transparent 6px, transparent 12px);
     }
 
     /* ── Shared ── */
@@ -230,7 +262,7 @@
       z-index: 100;
       font-family: 'Notable', sans-serif;
       font-size: 48px;
-      color: #5c6b3f;
+      color: #a9663e;
       letter-spacing: 0.05em;
       transform: scaleY(1.5);
       transform-origin: bottom left;
@@ -524,6 +556,9 @@
   </div>
 
   <!-- Warp flash -->
+  <div id="cursor-h"></div>
+  <div id="cursor-v"></div>
+  <div id="cursor-dot"></div>
   <div id="warp-flash"></div>
 
   <!-- Scene navigation -->
@@ -539,7 +574,7 @@
     <div class="corner-label">CARLIU</div>
     <div class="corner-label-right">MISSION: PREPARING...</div>
     <div class="bottom-right-label">
-      <span style="display:inline-block;width:18px;height:18px;background:#5c6b3f;vertical-align:middle;margin-right:12px;margin-bottom:6px;"></span>JOURNEY EASTWARD
+      <span style="display:inline-block;width:18px;height:18px;background:#a9663e;vertical-align:middle;margin-right:12px;margin-bottom:6px;"></span>JOURNEY EASTWARD
     </div>
     <div class="typewriter">2777.03.03 &nbsp; LOCATION: MILKY WAY GALAXY &nbsp; <span id="coords">8088.8388.8888</span></div>
     <div class="typewriter2">DESTINATION: WESTERN PLANET (CODE: OLD WEST PLANET)</div>
@@ -1254,7 +1289,7 @@
         s    = h * 2 / Math.sqrt(3);
       }
 
-      const GREENS  = ['#3f4d2a','#4a5a32','#536240','#455438','#3a4826','#5c6b3f','#47562f'];
+      const GREENS  = ['#3f4d2a','#4a5a32','#536240','#455438','#3a4826','#a9663e','#47562f'];
       const BLUES   = ['#1e5f8c','#2d6fa3','#3a7fb5','#1a5280','#245e8a'];
       const WHITES  = ['#ddddd0','#e8e8dc','#d4d4c4','#e0ddd4','#f0ede6'];
       const REDS    = ['#ae2c12','#c4331a','#991f0b','#b83015','#a02810'];
@@ -1475,6 +1510,25 @@
 
       if (!s3.classList.contains('hidden')) start();
       window.s3Redraw = start;
+    })();
+
+    /* ── Full-screen crosshair cursor ── */
+    (function() {
+      const ch  = document.getElementById('cursor-h');
+      const cv  = document.getElementById('cursor-v');
+      const dot = document.getElementById('cursor-dot');
+      document.addEventListener('mousemove', function(e) {
+        ch.style.top   = e.clientY + 'px';
+        cv.style.left  = e.clientX + 'px';
+        dot.style.top  = e.clientY + 'px';
+        dot.style.left = e.clientX + 'px';
+      });
+      document.addEventListener('mouseleave', function() {
+        ch.style.top   = '-9999px';
+        cv.style.left  = '-9999px';
+        dot.style.top  = '-9999px';
+        dot.style.left = '-9999px';
+      });
     })();
   </script>
 </body>
