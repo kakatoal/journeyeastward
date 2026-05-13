@@ -414,6 +414,26 @@
       letter-spacing: 0.15em;
     }
 
+    /* ── Viewfinder ── */
+    #viewfinder {
+      position: absolute;
+      inset: 0;
+      z-index: 99997;
+      pointer-events: none;
+    }
+    .vf-corner {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      border-color: #ffe066;
+      border-style: solid;
+      opacity: 0.85;
+    }
+    .vf-tl { top: 14px;    left: 14px;    border-width: 1px 0 0 1px; }
+    .vf-tr { top: 14px;    right: 14px;   border-width: 1px 1px 0 0; }
+    .vf-bl { bottom: 14px; left: 14px;    border-width: 0 0 1px 1px; }
+    .vf-br { bottom: 14px; right: 14px;   border-width: 0 1px 1px 0; }
+
     /* ── Warp flash overlay ── */
     #warp-flash {
       position: fixed;
@@ -456,18 +476,22 @@
 
     #story-intro {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: left;
+      width: max-content;
+      max-width: 98vw;
     }
 
     .story-line {
       display: block;
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 4.5vw;
+      font-size: 3.2vw;
       color: #e8e0cc;
       letter-spacing: 0.04em;
-      line-height: 1.05;
+      line-height: 1.15;
+      margin-bottom: 0.8vw;
       opacity: 0;
       transition: opacity 1.2s ease;
     }
@@ -480,7 +504,7 @@
       right: 48px;
       font-family: 'Notable', sans-serif;
       font-size: 12px;
-      color: #998a5a;
+      color: #ffe066;
       letter-spacing: 0.3em;
       opacity: 0;
       transition: opacity 1s ease;
@@ -758,9 +782,15 @@
   <!-- Loading / Intro screen -->
   <div id="loading-screen">
     <div id="ls-bg"></div>
+    <div id="viewfinder">
+      <div class="vf-corner vf-tl"></div>
+      <div class="vf-corner vf-tr"></div>
+      <div class="vf-corner vf-bl"></div>
+      <div class="vf-corner vf-br"></div>
+    </div>
     <div id="story-intro">
-      <span class="story-line" data-delay="1000">ONE DAY, DURING MY ROUTINE PATROL, I DETECTED A SIGNAL FROM AN UNUSUAL <span style="color:#95471f">PLANET</span>.</span>
-      <span class="story-line" data-delay="4500">THE <span id="planet-zoom-src" style="color:#95471f">PLANET</span> RADIATED A STRIKING, EARTHY RED FROM ITS SURFACE.</span>
+      <span class="story-line" data-delay="1000">ONE DAY, DURING MY ROUTINE PATROL, I DETECTED A <span style="color:#ffe066">SIGNAL</span> FROM AN UNUSUAL PLANET.</span>
+      <span class="story-line" data-delay="4500">THE <span id="planet-zoom-src">PLANET</span> RADIATED A STRIKING, EARTHY RED FROM <span style="white-space:nowrap">ITS&nbsp;SURFACE.</span></span>
       <span class="story-line" data-delay="8000">TEMPTED, I MADE THE DECISION TO FLY IN AND EXPLORE.</span>
     </div>
     <div id="click-hint">— CLICK TO CONTINUE —</div>
