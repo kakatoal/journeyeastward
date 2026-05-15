@@ -414,6 +414,19 @@
       letter-spacing: 0.15em;
     }
 
+    /* ── S3 viewed badges ── */
+    .s3-badge {
+      position: fixed;
+      width: 9px;
+      height: 9px;
+      pointer-events: none;
+      z-index: 100001;
+      top: -9999px;
+      left: -9999px;
+      box-sizing: border-box;
+      background: transparent;
+    }
+
     /* ── Viewfinder ── */
     #viewfinder {
       position: absolute;
@@ -559,16 +572,6 @@
     }
     #overlay-lake     { background: transparent; }
     #overlay-forest   { background: #2a3d1e; overflow: hidden; }
-    .forest-label {
-      position: absolute;
-      color: rgba(255,255,255,0.7);
-      font-family: 'Notable', sans-serif;
-      font-size: 0.55rem;
-      letter-spacing: 0.18em;
-      white-space: nowrap;
-      pointer-events: none;
-      z-index: 50;
-    }
     #forest-wrap {
       position: relative;
       width: 62.5vw;
@@ -582,6 +585,23 @@
       border: none;
       cursor: none;
     }
+    #forest-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      mix-blend-mode: multiply;
+      cursor: pointer;
+      z-index: 10;
+      transition: opacity 3s ease, filter 3.5s ease, transform 3s ease;
+    }
+    #forest-img.melting {
+      opacity: 0;
+      filter: blur(20px);
+      transform: scale(0.95);
+      pointer-events: none;
+    }
     .forest-label {
       position: absolute;
       color: rgba(255,255,255,0.7);
@@ -591,7 +611,10 @@
       white-space: nowrap;
       pointer-events: none;
       z-index: 50;
+      opacity: 0;
+      transition: opacity 0.5s ease;
     }
+    #overlay-forest.forest-revealed .forest-label { opacity: 1; }
     .forest-top    { top: 10px;    left: 50%; transform: translateX(-50%); }
     .forest-bottom { bottom: 10px; left: 50%; transform: translateX(-50%); }
     .forest-left   { left: 10px;   top: 50%;  transform: translateY(-50%) rotate(180deg); writing-mode: vertical-rl; }
@@ -627,12 +650,22 @@
       position: relative;
       display: inline-block;
     }
+    #mountain-video {
+      filter: blur(10px);
+      transition: filter 0.8s ease;
+      cursor: pointer;
+    }
+    #overlay-mountain.mt-revealed #mountain-video {
+      filter: blur(0px);
+    }
     .mt-label {
       position: absolute;
       color: rgba(255,255,255,0.75);
       font-family: 'Notable', sans-serif;
       font-size: 0.55rem;
       letter-spacing: 0.15em;
+      opacity: 0;
+      transition: opacity 0.7s ease;
       white-space: nowrap;
       pointer-events: none;
     }
@@ -664,7 +697,7 @@
     #lake-box {
       position: relative;
       z-index: 2;
-      background: #fff;
+      background: transparent;
       width: clamp(160px, 15vw, 220px);
       aspect-ratio: 1 / 1;
       display: flex;
@@ -674,6 +707,22 @@
       gap: 20px;
       padding: 32px;
     }
+    #lake-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      z-index: 0;
+      transition: filter 1.4s ease;
+    }
+    #lake-box p,
+    #lake-bar {
+      position: relative;
+      z-index: 1;
+    }
+    #lake-box {
+      cursor: pointer;
+    }
     #lake-box p {
       color: #000;
       font-family: 'Notable', sans-serif;
@@ -681,6 +730,11 @@
       letter-spacing: 0.12em;
       margin: 0;
       text-align: center;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+    #overlay-lake.lake-revealed #lake-box p {
+      opacity: 1;
     }
     #lake-bar {
       position: relative;
@@ -691,14 +745,31 @@
       height: 2px;
       margin-top: 10px;
       background: rgba(0,0,0,0.15);
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+    #overlay-lake.lake-revealed #lake-bar {
+      opacity: 1;
     }
     #lake-bar .s3-overlay-bar-fill {
       background: #1a7ab5;
     }
-    #overlay-lake.active #lake-bar .s3-overlay-bar-fill {
+    #overlay-lake.lake-revealed #lake-bar .s3-overlay-bar-fill {
       width: 100%;
       transition: width 5s linear;
     }
+    @keyframes lake-pulse {
+      0%, 100% { background: #b0b0b0; }
+      50%       { background: #ffffff; }
+    }
+    #overlay-lake:not(.lake-revealed) #lake-box {
+      animation: lake-pulse 1.4s ease-in-out infinite;
+    }
+    #overlay-lake.lake-revealed #lake-box::before {
+      filter: blur(6px);
+    }
+
+    #overlay-mountain.mt-revealed .mt-label { opacity: 1; }
 
     #overlay-mountain .s3-overlay-bar {
       bottom: auto;
@@ -724,8 +795,10 @@
       opacity: 0 !important;
       transform: translateX(16px) !important;
       transition: opacity 0.5s ease, transform 0.5s ease !important;
+      color: #e8e8dc !important;
     }
-    #s3-village-hint.village-hover {
+    #s3-village-hint.village-hover,
+    #s3-village-hint.village-unlocked {
       opacity: 1 !important;
       transform: translateX(0) !important;
     }
@@ -801,6 +874,9 @@
   <div id="cursor-h"></div>
   <div id="cursor-v"></div>
   <div id="cursor-dot"></div>
+  <div class="s3-badge" id="badge-blue"></div>
+  <div class="s3-badge" id="badge-green"></div>
+  <div class="s3-badge" id="badge-red"></div>
   <div id="warp-flash"></div>
 
   <!-- Scene navigation -->
@@ -889,8 +965,9 @@
     <div id="village-popup">VILLAGE</div>
 
     <div class="s3-overlay" id="overlay-lake">
-      <video src="ocean.mp4" autoplay muted playsinline loop
+      <video id="ocean-video" src="ocean.mp4" autoplay muted playsinline loop
              style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video>
+      <canvas id="ocean-mosaic" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;transition:opacity 0.9s ease;"></canvas>
       <div id="lake-box">
         <p>BLINDING BLUE.</p>
         <p>STARE TOO LONG AND YOU'LL FALL IN.</p>
@@ -900,6 +977,7 @@
     <div class="s3-overlay" id="overlay-forest">
       <div id="forest-wrap">
         <iframe src="forestindex.html" id="forest-frame" scrolling="no"></iframe>
+        <img src="forestphoto.jpg" id="forest-img" alt="" />
         <span class="forest-label forest-top">DENSE FOREST</span>
         <span class="forest-label forest-bottom">EASY ON THE EYES</span>
         <span class="forest-label forest-left">NOTHING THERE</span>
@@ -1644,6 +1722,9 @@
       const BLUES   = ['#1e5f8c','#2d6fa3','#3a7fb5','#1a5280','#245e8a'];
       const WHITES  = ['#ddddd0','#e8e8dc','#d4d4c4','#e0ddd4','#f0ede6'];
       const REDS    = ['#ae2c12','#c4331a','#991f0b','#b83015','#a02810'];
+      let villageUnlocked = false;
+      const viewedOverlays = new Set();
+      window._s3state = { viewedOverlays };
 
       function h2(a, b) {
         /* XOR-based mix — avoids the linear-periodicity issue of additive hashes */
@@ -1654,8 +1735,8 @@
         /* white villages: scattered, biased toward middle rows (iz 4–9) */
         const inMiddle = iz >= 4 && iz <= 9;
         const wn = h2(ix, iz);
-        if (inMiddle && wn < 12) return WHITES[(ix * 3 + iz * 7) % WHITES.length];
-        if (!inMiddle && wn < 2) return WHITES[(ix * 3 + iz * 7) % WHITES.length];
+        if (inMiddle && wn < 12) return villageUnlocked ? WHITES[(ix * 3 + iz * 7) % WHITES.length] : '#999999';
+        if (!inMiddle && wn < 2) return villageUnlocked ? WHITES[(ix * 3 + iz * 7) % WHITES.length] : '#999999';
 
         /* large stable patches for blue / red / green */
         const gx = Math.floor(ix / 5);
@@ -1746,6 +1827,76 @@
       const overlayMap = { blue: 'overlay-lake', green: 'overlay-forest', red: 'overlay-mountain' };
       let overlayTimer = null;
 
+      /* ── forest reveal ── */
+      var forestRevealed = false;
+      function revealForest() {
+        var el = document.getElementById('overlay-forest');
+        var img = document.getElementById('forest-img');
+        if (!el || forestRevealed) return;
+        forestRevealed = true;
+        if (img) img.classList.add('melting');
+        el.classList.add('forest-revealed');
+        var fill = el.querySelector('.s3-overlay-bar-fill');
+        fill.style.transition = 'none';
+        fill.style.width = '0%';
+        requestAnimationFrame(function() { requestAnimationFrame(function() {
+          fill.style.transition = 'width 5s linear';
+          fill.style.width = '100%';
+          overlayTimer = setTimeout(function() { hideOverlay('green'); }, 5000);
+        }); });
+      }
+      document.getElementById('forest-img').addEventListener('click', revealForest);
+
+      /* ── ocean mosaic ── */
+      var mosaicRaf = null;
+      var lakeRevealed = false;
+      function startMosaic() {
+        var video  = document.getElementById('ocean-video');
+        var canvas = document.getElementById('ocean-mosaic');
+        if (!video || !canvas) return;
+        var ctx2 = canvas.getContext('2d');
+        var TILE = 28;
+        function drawMosaic() {
+          if (!video.videoWidth) { mosaicRaf = requestAnimationFrame(drawMosaic); return; }
+          canvas.width  = Math.ceil(canvas.offsetWidth  / TILE);
+          canvas.height = Math.ceil(canvas.offsetHeight / TILE);
+          ctx2.imageSmoothingEnabled = false;
+          ctx2.drawImage(video, 0, 0, canvas.width, canvas.height);
+          mosaicRaf = requestAnimationFrame(drawMosaic);
+        }
+        mosaicRaf = requestAnimationFrame(drawMosaic);
+      }
+      function stopMosaic() {
+        var canvas = document.getElementById('ocean-mosaic');
+        if (canvas) {
+          canvas.style.opacity = '0';
+          setTimeout(function() {
+            if (mosaicRaf) { cancelAnimationFrame(mosaicRaf); mosaicRaf = null; }
+            var c = canvas.getContext('2d');
+            c.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.style.opacity = '1';
+          }, 950);
+        } else if (mosaicRaf) {
+          cancelAnimationFrame(mosaicRaf); mosaicRaf = null;
+        }
+      }
+      function revealLake() {
+        var el = document.getElementById('overlay-lake');
+        if (!el || lakeRevealed) return;
+        lakeRevealed = true;
+        el.classList.add('lake-revealed');
+        stopMosaic();
+        var fill = el.querySelector('.s3-overlay-bar-fill');
+        fill.style.transition = 'none';
+        fill.style.width = '0%';
+        requestAnimationFrame(function() { requestAnimationFrame(function() {
+          fill.style.transition = 'width 5s linear';
+          fill.style.width = '100%';
+          overlayTimer = setTimeout(function() { hideOverlay('blue'); }, 5000);
+        }); });
+      }
+      document.getElementById('lake-box').addEventListener('click', revealLake);
+
       function showOverlay(fam) {
         const el = document.getElementById(overlayMap[fam]);
         if (!el) return;
@@ -1757,21 +1908,63 @@
         fill.style.height = isVertical ? '0%'   : '100%';
         const vid = el.querySelector('video');
         if (vid) { vid.currentTime = 0; vid.play(); }
+        if (fam === 'blue') { startMosaic(); }
         requestAnimationFrame(() => requestAnimationFrame(() => {
           el.classList.add('active');
-          fill.style.transition = isVertical ? 'height 5s linear' : 'width 5s linear';
-          fill.style.width  = '100%';
+          if (fam !== 'red' && fam !== 'blue' && fam !== 'green') {
+            fill.style.transition = 'width 5s linear';
+            fill.style.width  = '100%';
+            fill.style.height = '100%';
+            overlayTimer = setTimeout(function() { hideOverlay(fam); }, 5000);
+          }
+        }));
+      }
+
+      function revealMountain() {
+        const el = document.getElementById('overlay-mountain');
+        if (!el || el.classList.contains('mt-revealed')) return;
+        el.classList.add('mt-revealed');
+        const fill = el.querySelector('.s3-overlay-bar-fill');
+        fill.style.transition = 'none';
+        fill.style.height = '0%';
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          fill.style.transition = 'height 5s linear';
           fill.style.height = '100%';
         }));
-        overlayTimer = setTimeout(function() { hideOverlay(fam); }, 5000);
+        overlayTimer = setTimeout(function() { hideOverlay('red'); }, 5000);
       }
+
+      document.getElementById('mountain-video').addEventListener('click', revealMountain);
 
       function hideOverlay(fam) {
         const el = document.getElementById(overlayMap[fam]);
         if (!el) return;
         el.classList.remove('active');
+        el.classList.remove('mt-revealed');
+        if (fam === 'blue') {
+          stopMosaic();
+          el.classList.remove('lake-revealed');
+          lakeRevealed = false;
+        }
+        if (fam === 'green') {
+          el.classList.remove('forest-revealed');
+          var img = document.getElementById('forest-img');
+          if (img) img.classList.remove('melting');
+          forestRevealed = false;
+        }
         const vid = el.querySelector('video');
         if (vid) vid.pause();
+        viewedOverlays.add(fam);
+        if (!villageUnlocked && viewedOverlays.has('blue') && viewedOverlays.has('green') && viewedOverlays.has('red')) {
+          unlockVillage();
+        }
+      }
+
+      function unlockVillage() {
+        villageUnlocked = true;
+        setTimeout(function() {
+          villageHint.classList.add('village-unlocked');
+        }, 600);
       }
 
       canvas.addEventListener('click', function() {
@@ -1984,35 +2177,64 @@
       const ch  = document.getElementById('cursor-h');
       const cv  = document.getElementById('cursor-v');
       const dot = document.getElementById('cursor-dot');
+      const badges = [
+        { el: document.getElementById('badge-blue'),  fam: 'blue',  color: '#5aaee0', ox: 10 },
+        { el: document.getElementById('badge-green'), fam: 'green', color: '#8ab84a', ox: 20 },
+        { el: document.getElementById('badge-red'),   fam: 'red',   color: '#ff6b3d', ox: 30 },
+      ];
+      function updateBadges(x, y) {
+        const state = window._s3state;
+        const viewed = state ? state.viewedOverlays : null;
+        const inS3 = !document.getElementById('scene-3').classList.contains('hidden');
+        badges.forEach(function(b) {
+          if (inS3) {
+            b.el.style.left   = (x + b.ox) + 'px';
+            b.el.style.top    = (y - 14) + 'px';
+            b.el.style.border = '1px solid rgba(255,255,255,0.75)';
+            b.el.style.background = (viewed && viewed.has(b.fam)) ? b.color : 'transparent';
+          } else {
+            b.el.style.left = '-9999px';
+            b.el.style.top  = '-9999px';
+          }
+        });
+      }
       document.addEventListener('mousemove', function(e) {
         ch.style.top   = e.clientY + 'px';
         cv.style.left  = e.clientX + 'px';
         dot.style.top  = e.clientY + 'px';
         dot.style.left = e.clientX + 'px';
+        updateBadges(e.clientX, e.clientY);
       });
       document.addEventListener('mouseleave', function() {
         ch.style.top   = '-9999px';
         cv.style.left  = '-9999px';
         dot.style.top  = '-9999px';
         dot.style.left = '-9999px';
+        updateBadges(-9999, -9999);
       });
+      var forestOverlay = document.getElementById('overlay-forest');
       window.addEventListener('message', function(e) {
+        var forestFrame = document.getElementById('forest-frame');
+        var fromForest = forestFrame && e.source === forestFrame.contentWindow;
         if (e.data.type === 'mousemove') {
           var x = e.data.x, y = e.data.y;
-          var forestFrame = document.getElementById('forest-frame');
-          if (forestFrame && e.source === forestFrame.contentWindow) {
+          if (fromForest) {
             var r = forestFrame.getBoundingClientRect();
             x += r.left; y += r.top;
+            if (forestOverlay) forestOverlay.classList.add('forest-active');
           }
           ch.style.top   = y + 'px';
           cv.style.left  = x + 'px';
           dot.style.top  = y + 'px';
           dot.style.left = x + 'px';
+          updateBadges(x, y);
         } else if (e.data.type === 'mouseleave') {
+          if (fromForest && forestOverlay) forestOverlay.classList.remove('forest-active');
           ch.style.top   = '-9999px';
           cv.style.left  = '-9999px';
           dot.style.top  = '-9999px';
           dot.style.left = '-9999px';
+          updateBadges(-9999, -9999);
         }
       });
     })();
