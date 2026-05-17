@@ -1066,9 +1066,12 @@
   <!-- ════ SCENE 5 ════ -->
   <div id="scene-5" class="scene-wrap hidden" style="background:#fff;"></div>
 
+  <!-- ════ SCENE 6 ════ -->
+  <div id="scene-6" class="scene-wrap hidden" style="background:#000;"></div>
+
   <script>
     /* ── Scene nav ── */
-    const sceneOrder = ['scene-1', 'scene-2', 'scene-3', 'scene-4', 'scene-5'];
+    const sceneOrder = ['scene-1', 'scene-2', 'scene-3', 'scene-4', 'scene-5', 'scene-6'];
     let currentSceneIndex = 0;
     let warpRunning = false;
 
@@ -2294,6 +2297,7 @@
           'pointer-events:none',
           'z-index:1000'
         ].join(';');
+        sub.id = 's5-scroll-label';
         sub.textContent = 'SCROLL TO FIND';
         document.body.appendChild(sub);
         function show() {
@@ -2490,7 +2494,12 @@
       }
 
       let dragging=false, dragX=0, dragY=0;
+      let signalFound=false;
       canvas.addEventListener('mousedown', function(e) {
+        if (signalFound) return;
+        var sigSX=(SIG_C+SIG_W/2)*CELL+panX, sigSY=(SIG_R+SIG_H/2)*CELL+panY;
+        var dist=Math.sqrt((e.clientX-sigSX)*(e.clientX-sigSX)+(e.clientY-sigSY)*(e.clientY-sigSY));
+        if (dist<120) { signalFound=true; triggerWait(); return; }
         dragging=true; dragX=e.clientX; dragY=e.clientY;
       });
       document.addEventListener('mousemove', function(e) {
@@ -2536,6 +2545,53 @@
           dot.style.animation='';
         }
         raf=requestAnimationFrame(draw);
+      }
+      function triggerWait() {
+        stop();
+        var dot=document.getElementById('cursor-dot');
+        if (dot) { dot.style.animation=''; dot.style.opacity='0'; }
+        var star2=document.getElementById('cursor-star2');
+        var star3=document.getElementById('cursor-star3');
+        if (star2) star2.style.animation='none';
+        if (star3) star3.style.animation='none';
+        var sl=document.getElementById('s5-scroll-label');
+        if (sl) { sl.style.transition='none'; sl.style.opacity='0'; }
+        /* freeze ticker */
+        var track=s5.querySelector('[style*="s5-tick"]');
+        if (track) track.style.animationPlayState='paused';
+
+        var overlay=document.createElement('div');
+        overlay.style.cssText='position:fixed;inset:0;z-index:99990;background:#fff;overflow:visible;display:grid;grid-template-columns:repeat(5,1fr);align-content:start;gap:0;padding:0;';
+        document.body.appendChild(overlay);
+
+        var fs=Math.max(44, Math.round(window.innerWidth*0.075));
+        var cols=5;
+        var wordH=fs*0.92;
+        var rows=Math.ceil(window.innerHeight/wordH)+2;
+        var total=cols*rows;
+
+        var words=[];
+        for (var i=0;i<total;i++) {
+          var sp=document.createElement('span');
+          sp.style.cssText="font-family:'Notable',sans-serif;font-size:"+fs+"px;color:#000;letter-spacing:-0.02em;opacity:0;line-height:1;margin:0;padding:0;display:block;overflow:visible;white-space:nowrap;";
+          sp.textContent='WAIT';
+          overlay.appendChild(sp);
+          words.push(sp);
+        }
+
+        var stagger=55;
+        words.forEach(function(w,i) {
+          setTimeout(function() { w.style.opacity='1'; }, i*stagger);
+        });
+
+        /* fade to black after screen is full */
+        var fillTime=total*stagger+300;
+        setTimeout(function() {
+          overlay.style.transition='none';
+          overlay.style.background='#000';
+          fadeToScene(sceneOrder.indexOf('scene-6'));
+          setTimeout(function() { overlay.remove(); }, 400);
+        }, fillTime);
       }
       function start() { if(running)return; running=true; last=performance.now(); raf=requestAnimationFrame(draw); }
       function stop()  { running=false; if(raf){cancelAnimationFrame(raf);raf=null;} var d=document.getElementById('cursor-dot'); if(d)d.style.animation=''; }
