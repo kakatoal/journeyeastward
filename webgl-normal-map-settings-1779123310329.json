@@ -1,0 +1,51 @@
+{
+  "aspectRatio": "16:9",
+  "materialPreset": "metal",
+  "colorPreset": "silver",
+  "effectColor": "#95471f",
+  "params": {
+    "shrinkSpeed": 0.34,
+    "dissolveScale": 1.33,
+    "dissolveAmount": 0.7,
+    "swirlStrength": 0.05,
+    "swirlScale": 2.25,
+    "swirlSpeed": 1.35,
+    "grainAmount": 0.3,
+    "grainScale": 13.5,
+    "brushSize": 0.421,
+    "brushSoftness": 0.268,
+    "distortShape": 1,
+    "noiseScale": 10.4,
+    "noiseSpeed": 0.5,
+    "ambient": 0.111,
+    "revealAmbient": 0.205,
+    "direction": 135,
+    "intensity": 0.54,
+    "specular": 1.1,
+    "radius": 2.72,
+    "metallic": 0.77,
+    "lightColor": "#ffffff",
+    "followCursor": true,
+    "sweepAmount": 0.8,
+    "cloudScale": 0.5,
+    "edgeSoftness": 0.25,
+    "introDuration": 3,
+    "topperOpacity": 0.85,
+    "topperContrast": 1
+  },
+  "introDirection": "left",
+  "imageVisible": {
+    "base": true,
+    "normal": true,
+    "topper": true,
+    "revealMask": true,
+    "cloudMask": true
+  },
+  "imageDataURLs": {
+    "base": "blob:https://athens.superopc.app/d20b372d-7d36-413d-9cd5-ff2fa29b9f75",
+    "normal": "blob:https://athens.superopc.app/bbf029c0-7923-4840-a036-38b561cccae1",
+    "topper": null,
+    "revealMask": "blob:https://athens.superopc.app/e457fa4c-408b-4af5-847f-3597fd3946e0",
+    "cloudMask": null
+  }
+}
