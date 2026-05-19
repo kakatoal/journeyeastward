@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Journey East</title>
-  <link href="https://fonts.googleapis.com/css2?family=Notable&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Notable&family=Bebas+Neue&family=UoqMunThenKhung&family=Chelsea+Market&family=Germania+One&family=Noto+Serif+SC&display=swap" rel="stylesheet" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -406,6 +406,16 @@
     }
 
     #planet-canvas { image-rendering: crisp-edges; }
+    .s6-line{font-family:'Notable',sans-serif;font-size:clamp(0.75rem,1.45vw,1.45rem);color:#fff;letter-spacing:0.1em;line-height:1.5;opacity:0;transition:opacity 0.55s;white-space:nowrap;}
+    .s6-line.vis{opacity:1;}
+    #s6-content{padding:5vh var(--s6-pad,5%) 10vh;background:#4a4a4a;}
+    .s6-article{display:grid;grid-template-columns:1fr 1fr;gap:6vw;}
+    .s6-col-en{font-family:'Germania One',serif;font-size:clamp(1.3rem,2vw,2rem);font-weight:700;color:#ae2c12;line-height:1.9;text-align:left;}
+    .s6-col-zh{display:flex;flex-direction:column;justify-content:space-between;min-height:200vh;}
+    .s6-col-en p,.s6-col-zh p{margin:0;}
+    .s6-col-en p{background:radial-gradient(circle 380px at var(--mx,50%) var(--my,-400%),#e8e8e8 0%,#aaa 25%,#555 55%,#1a1a1a 85%);-webkit-background-clip:text;background-clip:text;color:transparent;cursor:default;will-change:background;}
+    .s6-scroll-line{font-family:'Notable',sans-serif;font-size:clamp(1rem,1.9vw,1.9rem);color:#fff;letter-spacing:0.1em;line-height:1.5;white-space:normal;opacity:0;transform:translateY(24px);transition:opacity 0.9s ease,transform 0.9s ease;}
+    .s6-scroll-line.vis{opacity:1;transform:translateY(0);}
 
     .s2-ui {
       position: absolute;
@@ -1067,7 +1077,34 @@
   <div id="scene-5" class="scene-wrap hidden" style="background:#fff;"></div>
 
   <!-- ════ SCENE 6 ════ -->
-  <div id="scene-6" class="scene-wrap hidden" style="background:#000;"></div>
+  <div id="scene-6" class="scene-wrap hidden" style="background:#000;overflow:hidden;">
+    <div id="s6-bg" style="position:absolute;inset:0;background:#4a4a4a;z-index:0;opacity:0;transition:opacity 0.8s ease;pointer-events:none;"></div>
+    <div id="s6-scroll" style="position:absolute;inset:0;overflow-y:hidden;overflow-x:hidden;z-index:3;">
+      <div id="s6-canvas-wrap" style="height:100vh;position:relative;overflow:hidden;">
+        <div id="s6-ending" style="position:absolute;bottom:14px;left:130px;z-index:25;font-family:'Notable',sans-serif;font-size:clamp(1.4rem,2.8vw,3.8rem);color:#ae2c12;letter-spacing:0.08em;opacity:0;transition:opacity 1.2s ease;pointer-events:none;line-height:1;"></div>
+      </div>
+      <div id="s6-content">
+        <div class="s6-article">
+          <div class="s6-col-en">
+            <p>The murals hidden in the village corners revealed fragments of the planet's history.</p>
+            <p>In 1980s Earth, cowboys representing the American West began competing in the parks. The contest, starting with horse racing, was named "Journey Eastward" — meaning to pioneer toward the east. It was an era of explosive technological growth, and mere horse racing could not contain their ambitions. Their motto: "Let the horses race into the sky." The government poured massive funds into spacecraft and base construction, parading its power and technology before the world.</p>
+            <p>In the year 2000, a project called Planetary Migration emerged into public view. The government selected twenty of its most accomplished horse racing champions, trained them, and set them on course to "migrate" to a red planet 200 light-years away — a world of red continents, strikingly familiar. The project drew fierce controversy; horse racers had no business flying to space and colonizing worlds. Yet somehow, under tremendous pressure, it moved forward. On the morning of November 12, 2010, at eight o'clock, twenty spacecraft launched into the sky. That same day, the government was exposed for financial collapse, declared bankrupt, and a great depression followed. Over the next decade, it dissolved into small federal bodies. The spacecraft were eventually declared a failure — their signals vanishing without warning, no survivors.</p>
+          </div>
+          <div class="s6-col-zh">
+            <p class="s6-scroll-line">GOD. HOW DID I LOSE SO MUCH OF MY MEMORY.</p>
+            <p class="s6-scroll-line">SO I AM A DESCENDANT OF THOSE WHO MIGRATED HERE. THEN WHY CAN'T I REMEMBER ANYTHING.</p>
+            <p class="s6-scroll-line">OH NO. MY HEAD HURTS SO BADLY.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="s6-dialog" style="position:absolute;inset:0;z-index:20;padding:8% 14%;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:1.1em;pointer-events:none;opacity:1;transition:opacity 1s;"></div>
+    <div id="s6-shout" style="position:absolute;inset:0;z-index:21;background:#000;overflow:hidden;display:none;"></div>
+    <div class="vf-corner vf-tl" style="z-index:25;"></div>
+    <div class="vf-corner vf-tr" style="z-index:25;"></div>
+    <div class="vf-corner vf-bl" style="z-index:25;"></div>
+    <div class="vf-corner vf-br" style="z-index:25;"></div>
+  </div>
 
   <script>
     /* ── Scene nav ── */
@@ -2692,9 +2729,9 @@
     (function() {
       var s6 = document.getElementById('scene-6');
       var canvas = document.createElement('canvas');
-      canvas.style.cssText = 'position:absolute;display:block;';
-      s6.appendChild(canvas);
-      var gl = canvas.getContext('webgl', {alpha:false});
+      canvas.style.cssText = 'position:absolute;display:block;z-index:1;';
+      document.getElementById('s6-canvas-wrap').appendChild(canvas);
+      var gl = canvas.getContext('webgl', {alpha:true,premultipliedAlpha:false});
       if (!gl) return;
 
       /* shared vertex shader */
@@ -2760,29 +2797,30 @@
         '  float ink   = raw * mVal;',
         '  vec3  N     = normalize(nSamp*2.0-1.0);',
         '  float gray  = dot(base.rgb, vec3(0.299,0.587,0.114));',
-        '  vec3  metal = mix(base.rgb, vec3(gray), 0.77);',
+        '  vec3  metalBase = mix(base.rgb, vec3(gray), 0.77);',
+        '  vec3  metal = metalBase * 0.32;',
         '  vec3  col   = metal;',
         '  if(ink > 0.001){',
         '    vec3  L   = normalize(vec3(-0.707, 0.707, 0.5));',
         '    float dc  = max(dot(N,L), 0.0);',
-        '    float lt  = 0.18 + dc*0.7;',
+        '    float lt  = 0.18 + dc*0.9;',
         '    vec2  cd  = vec2((u_light.x-v_uv.x)*u_ar, u_light.y-v_uv.y);',
         '    vec3  Lc  = normalize(vec3(cd, 0.3));',
         '    vec3  Hc  = normalize(Lc+vec3(0.0,0.0,1.0));',
         '    float sc  = pow(max(dot(N,Hc),0.0), 32.0)*2.0;',
-        '    float att = 1.0/(1.0+(length(cd)/0.3)*(length(cd)/0.3));',
+        '    float att = 1.0/(1.0+(length(cd)/0.45)*(length(cd)/0.45));',
         '    lt += sc * att;',
-        '    col = mix(col, metal*lt, ink);',
+        '    col = mix(col, metalBase*lt*0.55, ink);',
         '  }',
         '  float gr = (hash(v_uv*810.0+u_time*7.3)-0.5)*0.016;',
         '  col = clamp(col+gr, 0.0, 1.0);',
+        '  float outA = 1.0;',
         '  if(u_intro < 1.0){',
         '    float sweepX = 1.0 - v_uv.x;',
         '    float thr    = (1.0+0.25) - u_intro*(1.0+0.5);',
-        '    float a      = smoothstep(thr-0.25, thr+0.25, sweepX);',
-        '    col = mix(vec3(0.0), col, a);',
+        '    outA = smoothstep(thr-0.25, thr+0.25, sweepX);',
         '  }',
-        '  gl_FragColor = vec4(col, 1.0);',
+        '  gl_FragColor = vec4(col, outA);',
         '}'
       ].join('\n');
 
@@ -2868,13 +2906,15 @@
       function resize(){
         var sw=window.innerWidth, sh=window.innerHeight;
         var cw,ch;
-        if(sw/sh>imgAR){ch=sh;cw=Math.round(sh*imgAR);}
-        else           {cw=sw;ch=Math.round(sw/imgAR);}
+        if(sw/sh>imgAR){cw=sw;ch=Math.round(sw/imgAR);}
+        else           {ch=sh;cw=Math.round(sh*imgAR);}
+        var zoom=0.90; cw=Math.round(cw*zoom); ch=Math.round(ch*zoom);
         canvas.width=cw; canvas.height=ch;
         canvasLeft=Math.round((sw-cw)/2);
         canvasTop =Math.round((sh-ch)/2);
         canvas.style.left=canvasLeft+'px';
         canvas.style.top =canvasTop+'px';
+        document.documentElement.style.setProperty('--s6-pad', canvasLeft+'px');
         canvas.style.width=cw+'px';
         canvas.style.height=ch+'px';
         fbos[0]=makeFBO(cw,ch);
@@ -2882,20 +2922,32 @@
         fboIdx=0;
       }
 
-      var raf=null,running=false,t0=0,introT=0;
+      var raf=null,running=false,t0=0,introT=0,introReady=false;
       var prevLx=0.5,prevLy=0.5,brushDX=1,brushDY=0;
+      var isHovering=false;
+      canvas.addEventListener('mouseenter',function(){isHovering=true;});
+      canvas.addEventListener('mouseleave',function(){isHovering=false;});
 
       function draw(ts){
         if(!running)return;
-        var intro=Math.min((ts-introT)*0.001/3.0, 1.0);
+        var intro=introReady?Math.min((ts-introT)*0.001/3.0,1.0):0.0;
         var cp=window._cursorPos||{x:window.innerWidth*0.5,y:window.innerHeight*0.5};
+        var scrollTop=(document.getElementById('s6-scroll')||{scrollTop:0}).scrollTop;
         var lx=(cp.x-canvasLeft)/canvas.width;
-        var ly=(cp.y-canvasTop)/canvas.height;
+        var ly=(cp.y-canvasTop+scrollTop)/canvas.height;
         var ar=canvas.width/canvas.height;
         var dx=lx-prevLx, dy=ly-prevLy;
         var spd=Math.sqrt((dx*ar)*(dx*ar)+dy*dy);
         if(spd>0.001){var s=0.3;brushDX=brushDX*(1-s)+(dx*ar/spd)*s;brushDY=brushDY*(1-s)+(dy/spd)*s;var bl=Math.sqrt(brushDX*brushDX+brushDY*brushDY);brushDX/=bl;brushDY/=bl;}
         prevLx=lx;prevLy=ly;
+        /* idle: when hovering but not moving, slowly orbit brush direction */
+        var idleSpd=0;
+        if(isHovering&&spd<0.001){
+          var it=(ts-t0)*0.001*0.6;
+          brushDX=Math.cos(it);brushDY=Math.sin(it);
+          idleSpd=0.012;
+        }
+        var paintSpd=spd>0.001?Math.min(spd,0.04):idleSpd;
 
         /* paint pass: read prev FBO → write next FBO */
         gl.useProgram(paintProg);
@@ -2906,7 +2958,7 @@
         gl.uniform2f(pLight, lx, ly);
         gl.uniform1f(pAR, ar);
         gl.uniform2f(pDir, brushDX, brushDY);
-        gl.uniform1f(pSpeed, Math.min(spd, 0.04));
+        gl.uniform1f(pSpeed, paintSpd);
         gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 
         /* display pass: use freshly written FBO */
@@ -2925,18 +2977,121 @@
         raf=requestAnimationFrame(draw);
       }
 
+      function s6TypeIn(el,text,spd,cb){
+        var i=0,id=setInterval(function(){
+          el.textContent+=text[i++];
+          if(i>=text.length){clearInterval(id);if(cb)cb();}
+        },spd);
+      }
+
+      function s6ShowShout(cb){
+        var shout=document.getElementById('s6-shout');
+        shout.innerHTML=''; shout.style.display='block'; shout.style.opacity='1'; shout.style.transition='';
+        var fs=Math.max(36,Math.round(window.innerWidth*0.072));
+        var inner=document.createElement('div');
+        inner.style.cssText='position:absolute;inset:-40%;transform:rotate(-9deg);display:grid;grid-template-columns:repeat(4,1fr);align-content:start;gap:0;';
+        shout.appendChild(inner);
+        var rows=Math.ceil(window.innerHeight*1.8/(fs*0.9))+3;
+        var total=4*rows;
+        for(var i=0;i<total;i++){
+          var sp=document.createElement('span');
+          sp.style.cssText='font-family:Notable,sans-serif;font-size:'+fs+'px;color:#ffe066;line-height:1;display:block;overflow:visible;white-space:nowrap;';
+          sp.textContent='NOT A SIGNAL';
+          inner.appendChild(sp);
+        }
+        setTimeout(function(){shout.style.display='none';shout.innerHTML='';if(cb)cb();},900);
+      }
+
+      function s6RunDialog(){
+        var dlg=document.getElementById('s6-dialog');
+        dlg.innerHTML=''; dlg.style.opacity='1'; dlg.style.display='';
+        function addLine(extra){
+          var el=document.createElement('div');
+          el.className='s6-line';
+          if(extra) el.style.cssText=extra;
+          dlg.appendChild(el);
+          setTimeout(function(){el.classList.add('vis');},30);
+          return el;
+        }
+        setTimeout(function(){
+          var l1=addLine();
+          s6TypeIn(l1,'IMPOSSIBLE. IS THIS REALLY WHERE THE SIGNAL CAME FROM.',52,function(){
+            setTimeout(function(){
+              s6ShowShout(function(){
+                var l2=addLine('font-family:Notable,sans-serif;font-size:clamp(1.5rem,3.5vw,3.5rem);letter-spacing:0.15em;color:#ffe066;');
+                l2.textContent='NOT A SIGNAL';
+                setTimeout(function(){
+                  var l3=addLine();
+                  s6TypeIn(l3,'THIS IS MY MEMORY.',52,function(){
+                    setTimeout(function(){
+                      var l4=addLine();
+                      s6TypeIn(l4,'THIS IS WHERE I WAS BORN.',52,function(){
+                        setTimeout(function(){
+                          var l5=addLine();
+                          s6TypeIn(l5,'THIS IS MY HOMETOWN, EASTERN TOWN.',52,function(){
+                            setTimeout(function(){
+                              var l6=addLine();
+                              s6TypeIn(l6,'HOW COULD I FORGET.',52,function(){
+                                setTimeout(function(){
+                                  var l7=addLine();
+                                  s6TypeIn(l7,'I NEED TO INVESTIGATE THIS CAREFULLY, AND REMEMBER.',52,function(){
+                                    setTimeout(function(){
+                                      dlg.style.transition='opacity 1s';
+                                      dlg.style.opacity='0';
+                                      var ending=document.getElementById('s6-ending');
+                                      if(ending){ending.innerHTML='IT ALL BEGAN WITH THE<br>EASTERN COMPETITION.';ending.style.opacity='1';}
+                                      setTimeout(function(){
+                                        dlg.style.display='none';
+                                        introReady=true;
+                                        introT=performance.now();
+                                        var sc=document.getElementById('s6-scroll');
+                                        if(sc)sc.style.overflowY='auto';
+                                        document.querySelectorAll('#scene-6 .vf-corner').forEach(function(c){c.style.transition='opacity 0.6s';c.style.opacity='0';});
+                                        var bg=document.getElementById('s6-bg');
+                                        if(bg)bg.style.opacity='1';
+                                      },1000);
+                                    },1600);
+                                  });
+                                },750);
+                              });
+                            },750);
+                          });
+                        },750);
+                      });
+                    },650);
+                  });
+                },400);
+              });
+            },500);
+          });
+        },700);
+      }
+
       function startGL(){
         if(running)return;
         running=true; resize();
         document.body.classList.remove('signal-active');
         var dot=document.getElementById('cursor-dot');
         if(dot){dot.style.opacity='';dot.style.animation='none';}
-        t0=introT=performance.now();
+        introReady=false;
+        t0=performance.now(); introT=t0;
         raf=requestAnimationFrame(draw);
+        s6RunDialog();
       }
       function stop(){
-        running=false;
+        running=false; introReady=false;
         if(raf){cancelAnimationFrame(raf);raf=null;}
+        var dlg=document.getElementById('s6-dialog');
+        if(dlg){dlg.innerHTML='';dlg.style.opacity='1';dlg.style.display='';}
+        var shout=document.getElementById('s6-shout');
+        if(shout){shout.style.display='none';shout.innerHTML='';}
+        var ending=document.getElementById('s6-ending');
+        if(ending){ending.style.transition='none';ending.style.opacity='0';}
+        document.querySelectorAll('#scene-6 .vf-corner').forEach(function(c){c.style.transition='none';c.style.opacity='0.85';});
+        var bg=document.getElementById('s6-bg');
+        if(bg){bg.style.transition='none';bg.style.opacity='0';}
+        var scroll=document.getElementById('s6-scroll');
+        if(scroll){scroll.scrollTop=0;scroll.style.overflowY='hidden';}
       }
 
       new MutationObserver(function(){
@@ -2944,6 +3099,36 @@
       }).observe(s6,{attributes:true,attributeFilter:['class']});
 
       window.addEventListener('resize',function(){if(running)resize();});
+
+      (function(){
+        var scrollEl=document.getElementById('s6-scroll');
+        var obs=new IntersectionObserver(function(entries){
+          entries.forEach(function(e){if(e.isIntersecting)e.target.classList.add('vis');});
+        },{root:scrollEl,threshold:0.3});
+        document.querySelectorAll('.s6-scroll-line').forEach(function(el){obs.observe(el);});
+
+        (function(){
+          var paras=Array.from(document.querySelectorAll('.s6-col-en p'));
+          var gx=-9999,gy=-9999;
+          var states=paras.map(function(){return{cx:50,cy:-400};});
+          var colEn=document.querySelector('.s6-col-en');
+          colEn.addEventListener('mousemove',function(e){gx=e.clientX;gy=e.clientY;});
+          colEn.addEventListener('mouseleave',function(){gx=-9999;gy=-9999;});
+          function loop(){
+            paras.forEach(function(p,i){
+              var r=p.getBoundingClientRect();
+              var tx=gx===-9999?50:(gx-r.left)/r.width*100;
+              var ty=gy===-9999?-400:(gy-r.top)/r.height*100;
+              states[i].cx+=(tx-states[i].cx)*0.1;
+              states[i].cy+=(ty-states[i].cy)*0.1;
+              p.style.setProperty('--mx',states[i].cx.toFixed(2)+'%');
+              p.style.setProperty('--my',states[i].cy.toFixed(2)+'%');
+            });
+            requestAnimationFrame(loop);
+          }
+          requestAnimationFrame(loop);
+        })();
+      })();
     })();
 
   </script>
